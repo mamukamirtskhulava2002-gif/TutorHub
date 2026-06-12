@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/remind-tutor-complete",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-complete",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/tutor-timeout",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/expire-pending",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}
