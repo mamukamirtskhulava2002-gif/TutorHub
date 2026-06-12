@@ -8,6 +8,11 @@ export const metadata = {
   description: "ვერიფიცირებული კერძო მასწავლებლები ყველა საგანში. ისწავლე ონლაინ ან ადგილზე, გარანტირებული გადახდით.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="ka" suppressHydrationWarning>

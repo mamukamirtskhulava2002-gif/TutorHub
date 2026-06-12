@@ -55,7 +55,7 @@ export default function PaymentsPage() {
       <div className="dash-container">
 
         {/* Sidebar */}
-        <div className="sidebar">
+        <div className="sidebar hidden md:flex">
           <div className="px-3 py-2 mb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">მენიუ</p>
           </div>

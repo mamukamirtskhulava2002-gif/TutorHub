@@ -618,7 +618,7 @@ function MessagesContent() {
 
       <div className="dash-container flex-1">
         {/* Sidebar */}
-        <div className="sidebar">
+        <div className="sidebar hidden md:flex">
           <div className="px-3 py-2 mb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">მენიუ</p>
           </div>
@@ -633,11 +633,10 @@ function MessagesContent() {
 
         {/* Chat area */}
         <div className="main-content p-0 flex">
-          <div className="flex w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-            style={{ height: "calc(100vh - 80px)" }}>
+          <div className="flex w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-[calc(100vh-144px)] md:h-[calc(100vh-80px)]">
 
             {/* ─── Chat list ─── */}
-            <div className="w-72 border-r border-gray-100 flex flex-col shrink-0">
+            <div className={`border-r border-gray-100 flex flex-col shrink-0 ${activeChatId ? 'hidden md:flex md:w-72' : 'w-full md:w-72'}`}>
               <div className="p-4 border-b border-gray-100">
                 <h3 className="font-bold text-gray-900">💬 შეტყობინებები</h3>
               </div>
@@ -724,6 +723,14 @@ function MessagesContent() {
 
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3 shrink-0">
+                  {/* Back button — mobile only */}
+                  <button
+                    onClick={() => setActiveChatId(null)}
+                    className="md:hidden flex items-center justify-center w-8 h-8 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors text-lg shrink-0"
+                    aria-label="უკან"
+                  >
+                    ←
+                  </button>
                   <div className="avatar w-9 h-9 avatar-green text-sm shrink-0">
                     {activeChat.name?.[0]}
                   </div>
@@ -999,7 +1006,7 @@ function MessagesContent() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+              <div className="hidden md:flex flex-1 flex-col items-center justify-center text-gray-400 gap-3">
                 <p className="text-4xl">💬</p>
                 <p className="text-sm">აირჩიეთ საუბარი</p>
               </div>

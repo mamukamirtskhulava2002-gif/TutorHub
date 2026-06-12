@@ -161,7 +161,7 @@ export default async function HomePage() {
       <LandingNavbar />
 
       {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+      <section className="relative min-h-[92svh] md:min-h-[92vh] flex items-center overflow-hidden">
         {/* Background image */}
         <Image
           src="/hero2.jpg"
@@ -170,21 +170,22 @@ export default async function HomePage() {
           className="object-cover object-center"
           priority
         />
-        {/* Overlay — left-heavy gradient so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-950/85 via-gray-950/60 to-gray-950/20" />
+        {/* Overlay — mobile: uniform so full photo is visible; desktop: left-heavy gradient for text legibility */}
+        <div className="absolute inset-0 bg-gray-950/55 md:hidden" />
+        <div className="absolute inset-0 hidden md:block bg-gradient-to-r from-gray-950/85 via-gray-950/60 to-gray-950/20" />
         {/* Subtle bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-28 pb-24">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-16 pb-6 md:pt-28 md:pb-24">
           <div className="max-w-2xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-emerald-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-8">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-emerald-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-4 md:mb-8">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
               საქართველოს #1 სასწავლო პლატფორმა
             </div>
 
             {/* H1 */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-6 leading-[1.05]">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-3 md:mb-6 leading-[1.05]">
               იპოვე{" "}
               <span className="relative inline-block">
                 <span className="text-emerald-400 italic">სანდო</span>
@@ -196,22 +197,22 @@ export default async function HomePage() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-white/75 text-lg sm:text-xl max-w-xl mb-10 font-light leading-relaxed">
+            <p className="text-white/75 text-base sm:text-xl max-w-xl mb-4 md:mb-10 font-light leading-relaxed">
               ვერიფიცირებული მასწავლებლები ნებისმიერ საგანში.
               ონლაინ ან ადგილზე — შენთვის ხელსაყრელ დროს.
               <strong className="text-white font-semibold"> გარანტირებული</strong> გადახდის სისტემით.
             </p>
 
             {/* Match widget */}
-            <div className="mb-12">
+            <div className="mb-4 md:mb-12">
               <MatchWidget />
-              <p className="text-xs text-white/50 mt-3">
+              <p className="text-xs text-white/50 mt-2">
                 რეგისტრაციის გარეშეც შეგიძლია ნახო მასწავლებლები ↑
               </p>
             </div>
 
             {/* Stats row */}
-            <div className="flex flex-wrap gap-8">
+            <div className="flex flex-wrap gap-6 md:gap-8">
               <AnimatedStats
                 tutorsCount={tutorsCount}
                 studentsCount={studentsCount}
