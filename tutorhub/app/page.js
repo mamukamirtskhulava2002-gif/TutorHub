@@ -163,15 +163,24 @@ export default async function HomePage() {
       {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
       <section className="relative min-h-[92svh] md:min-h-[92vh] flex items-center overflow-hidden">
         {/* Background image */}
+        {/* Mobile image — portrait, shows all 4 people */}
+        <Image
+          src="/hero-mobile.jpg"
+          alt="TutorHub hero"
+          fill
+          className="object-cover object-top md:hidden"
+          priority
+        />
+        {/* Desktop image */}
         <Image
           src="/hero2.jpg"
           alt="TutorHub hero"
           fill
-          className="object-cover object-center"
+          className="object-cover object-center hidden md:block"
           priority
         />
-        {/* Overlay — mobile: uniform so full photo is visible; desktop: left-heavy gradient for text legibility */}
-        <div className="absolute inset-0 bg-gray-950/55 md:hidden" />
+        {/* Overlay — mobile: uniform; desktop: left-heavy gradient */}
+        <div className="absolute inset-0 bg-gray-950/50 md:hidden" />
         <div className="absolute inset-0 hidden md:block bg-gradient-to-r from-gray-950/85 via-gray-950/60 to-gray-950/20" />
         {/* Subtle bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
