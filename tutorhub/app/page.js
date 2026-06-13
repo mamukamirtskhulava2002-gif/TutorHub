@@ -68,15 +68,37 @@ const REVIEW_COLORS = [
   "bg-violet-100 text-violet-800",
 ];
 
-const SUBJECTS_GRID = [
-  { icon: "📐", label: "მათემატიკა" },
-  { icon: "⚛️", label: "ფიზიკა" },
-  { icon: "🧪", label: "ქიმია" },
-  { icon: "🌿", label: "ბიოლოგია" },
-  { icon: "📖", label: "ქართული" },
-  { icon: "🇬🇧", label: "ინგლისური" },
-  { icon: "🏛️", label: "ისტორია" },
-  { icon: "💻", label: "პროგრამირება" },
+const SUBJECT_CATEGORIES = [
+  {
+    label: "🏫 სკოლა",
+    color: "bg-blue-50 text-blue-700 border-blue-100",
+    subjects: ["მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","გეოგრაფია","ისტორია","ქართული ენა და ლიტერატურა","სამოქალაქო განათლება","ინფორმატიკა"],
+  },
+  {
+    label: "🌍 უცხო ენები",
+    color: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    subjects: ["ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა","ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა","IELTS / TOEFL / SAT მომზადება"],
+  },
+  {
+    label: "💻 პროგრამირება & ტექნოლოგია",
+    color: "bg-violet-50 text-violet-700 border-violet-100",
+    subjects: ["Python","JavaScript","Java","C# / C++","Swift","UI/UX დიზაინი","გრაფიკული დიზაინი","3D მოდელირება","კიბერუსაფრთხოება","Cloud Computing","მონაცემთა ბაზები (SQL)"],
+  },
+  {
+    label: "📊 ბიზნესი & ფინანსები",
+    color: "bg-amber-50 text-amber-700 border-amber-100",
+    subjects: ["ციფრული მარკეტინგი","SMM და SEO","ბუღალტერია","ფინანსური მოდელირება","პროექტების მართვა (Agile/Scrum)"],
+  },
+  {
+    label: "🎵 მუსიკა & ხელოვნება",
+    color: "bg-rose-50 text-rose-700 border-rose-100",
+    subjects: ["ფორტეპიანო","გიტარა","ვიოლინო","დრამი","სოლფეჯიო","მუსიკალური თეორია","ხატვა","ფოტოგრაფია","კინომონტაჟი"],
+  },
+  {
+    label: "✨ სხვა",
+    color: "bg-gray-100 text-gray-600 border-gray-200",
+    subjects: ["იოგა და მედიტაცია","კულინარია","ჭადრაკი","საჯარო გამოსვლები","სწრაფი კითხვა","მართვის მოწმობის თეორია"],
+  },
 ];
 
 const AVATAR_COLORS = [
@@ -551,15 +573,23 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">პოპულარული საგნები</h2>
-            <p className="text-gray-400 text-sm">ყველა ასაკის სტუდენტისთვის</p>
+            <p className="text-gray-400 text-sm">ყველა ასაკისთვის</p>
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-            {SUBJECTS_GRID.map(({ icon, label }) => (
-              <Link key={label} href={`/search?subject=${label}`}
-                className="group flex flex-col items-center gap-2 p-4 bg-white border border-gray-100 rounded-2xl hover:border-emerald-300 hover:bg-emerald-50 transition-all">
-                <span className="text-2xl">{icon}</span>
-                <span className="text-xs font-medium text-gray-600 group-hover:text-emerald-700 text-center leading-tight">{label}</span>
-              </Link>
+          <div className="space-y-6">
+            {SUBJECT_CATEGORIES.map(({ label, color, subjects }) => (
+              <div key={label}>
+                <p className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-full border mb-3 ${color}`}>
+                  {label}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {subjects.map(s => (
+                    <Link key={s} href={`/search?subject=${encodeURIComponent(s)}`}
+                      className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all font-medium">
+                      {s}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
