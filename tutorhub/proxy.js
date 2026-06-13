@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   let response = NextResponse.next({ request });
 
@@ -23,8 +23,6 @@ export async function middleware(request) {
     }
   );
 
-  // Use getSession() — reads from cookie without a network call.
-  // Page-level components do their own auth verification.
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session?.user) {
