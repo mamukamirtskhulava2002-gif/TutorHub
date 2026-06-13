@@ -24,7 +24,6 @@ const SUBJECTS = [
   // უცხო ენები
   "ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა",
   "ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა",
-  "IELTS / TOEFL / SAT მომზადება",
   // პროგრამირება & ტექნოლოგია
   "Python","JavaScript","Java","C# / C++","Swift",
   "UI/UX დიზაინი","გრაფიკული დიზაინი","3D მოდელირება",
@@ -384,7 +383,16 @@ function SubjectDropdown({ value, onChange }) {
   }, [open]);
 
   const filtered = query.trim()
-    ? SUBJECTS.filter(s => s.toLowerCase().includes(query.toLowerCase()))
+    ? SUBJECTS
+        .filter(s => s.toLowerCase().includes(query.toLowerCase()))
+        .sort((a, b) => {
+          const q = query.toLowerCase();
+          const aStart = a.toLowerCase().startsWith(q);
+          const bStart = b.toLowerCase().startsWith(q);
+          if (aStart && !bStart) return -1;
+          if (!aStart && bStart) return 1;
+          return 0;
+        })
     : SUBJECTS;
 
   return (
