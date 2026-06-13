@@ -70,33 +70,33 @@ const REVIEW_COLORS = [
 
 const SUBJECT_CATEGORIES = [
   {
-    label: "🏫 სკოლა",
-    color: "bg-blue-50 text-blue-700 border-blue-100",
+    icon: "🏫", label: "სკოლა",
+    headerBg: "bg-blue-500", chipBg: "bg-blue-50 text-blue-700 hover:bg-blue-100",
     subjects: ["მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","გეოგრაფია","ისტორია","ქართული ენა და ლიტერატურა","სამოქალაქო განათლება","ინფორმატიკა"],
   },
   {
-    label: "🌍 უცხო ენები",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    icon: "🌍", label: "უცხო ენები",
+    headerBg: "bg-emerald-500", chipBg: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
     subjects: ["ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა","ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა","IELTS / TOEFL / SAT მომზადება"],
   },
   {
-    label: "💻 პროგრამირება & ტექნოლოგია",
-    color: "bg-violet-50 text-violet-700 border-violet-100",
+    icon: "💻", label: "პროგრამირება & ტექნოლოგია",
+    headerBg: "bg-violet-500", chipBg: "bg-violet-50 text-violet-700 hover:bg-violet-100",
     subjects: ["Python","JavaScript","Java","C# / C++","Swift","UI/UX დიზაინი","გრაფიკული დიზაინი","3D მოდელირება","კიბერუსაფრთხოება","Cloud Computing","მონაცემთა ბაზები (SQL)"],
   },
   {
-    label: "📊 ბიზნესი & ფინანსები",
-    color: "bg-amber-50 text-amber-700 border-amber-100",
+    icon: "📊", label: "ბიზნესი & ფინანსები",
+    headerBg: "bg-amber-500", chipBg: "bg-amber-50 text-amber-700 hover:bg-amber-100",
     subjects: ["ციფრული მარკეტინგი","SMM და SEO","ბუღალტერია","ფინანსური მოდელირება","პროექტების მართვა (Agile/Scrum)"],
   },
   {
-    label: "🎵 მუსიკა & ხელოვნება",
-    color: "bg-rose-50 text-rose-700 border-rose-100",
+    icon: "🎵", label: "მუსიკა & ხელოვნება",
+    headerBg: "bg-rose-500", chipBg: "bg-rose-50 text-rose-700 hover:bg-rose-100",
     subjects: ["ფორტეპიანო","გიტარა","ვიოლინო","დრამი","სოლფეჯიო","მუსიკალური თეორია","ხატვა","ფოტოგრაფია","კინომონტაჟი"],
   },
   {
-    label: "✨ სხვა",
-    color: "bg-gray-100 text-gray-600 border-gray-200",
+    icon: "✨", label: "სხვა",
+    headerBg: "bg-gray-500", chipBg: "bg-gray-100 text-gray-600 hover:bg-gray-200",
     subjects: ["იოგა და მედიტაცია","კულინარია","ჭადრაკი","საჯარო გამოსვლები","სწრაფი კითხვა","მართვის მოწმობის თეორია"],
   },
 ];
@@ -575,16 +575,19 @@ export default async function HomePage() {
             <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">პოპულარული საგნები</h2>
             <p className="text-gray-400 text-sm">ყველა ასაკისთვის</p>
           </div>
-          <div className="space-y-6">
-            {SUBJECT_CATEGORIES.map(({ label, color, subjects }) => (
-              <div key={label}>
-                <p className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-full border mb-3 ${color}`}>
-                  {label}
-                </p>
-                <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {SUBJECT_CATEGORIES.map(({ icon, label, headerBg, chipBg, subjects }) => (
+              <div key={label} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                {/* Card header */}
+                <div className={`${headerBg} px-4 py-3 flex items-center gap-2`}>
+                  <span className="text-lg">{icon}</span>
+                  <span className="text-sm font-bold text-white">{label}</span>
+                </div>
+                {/* Chips */}
+                <div className="p-4 flex flex-wrap gap-2">
                   {subjects.map(s => (
                     <Link key={s} href={`/search?subject=${encodeURIComponent(s)}`}
-                      className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all font-medium">
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${chipBg}`}>
                       {s}
                     </Link>
                   ))}
