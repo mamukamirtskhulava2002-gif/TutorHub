@@ -30,9 +30,10 @@ export default function LandingNavbar() {
         {/* Center nav — desktop only */}
         <div className="hidden md:flex items-center gap-7">
           {[
-            { href: "/search",       label: "მასწავლებლები", isLink: true },
+            { href: "/about",        label: "ჩვენს შესახებ",  isLink: true },
+            { href: "/search",       label: "მასწავლებლები",  isLink: true },
             { href: "#how-it-works", label: "როგორ მუშაობს", isLink: false },
-            { href: "#for-tutors",   label: "მასწავლებლებს", isLink: false },
+            { href: "#for-tutors",   label: "მასწავლებლებს",  isLink: false },
           ].map(({ href, label, isLink }) =>
             isLink ? (
               <Link key={href} href={href}
@@ -87,7 +88,8 @@ export default function LandingNavbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 flex flex-col gap-3">
-          <Link href="/search" className="text-sm font-medium text-gray-700 py-2">მასწავლებლები</Link>
+          <Link href="/about" className="text-sm font-medium text-gray-700 py-2" onClick={() => setMenuOpen(false)}>ჩვენს შესახებ</Link>
+          <Link href="/search" className="text-sm font-medium text-gray-700 py-2" onClick={() => setMenuOpen(false)}>მასწავლებლები</Link>
           <a href="#how-it-works" className="text-sm font-medium text-gray-700 py-2" onClick={() => setMenuOpen(false)}>
             როგორ მუშაობს
           </a>

@@ -38,21 +38,27 @@ const FEATURES = [
 const HOW_IT_WORKS = [
   {
     step: "01",
-    title: "მოიძიე & გაფილტრე",
-    desc: "გამოიყენე საგნის, ბიუჯეტის, ლოკაციისა და ფორმატის ფილტრები. ნახე ყოველი მასწავლებლის პროფილი, ვიდეო, რეიტინგი.",
+    title: "აირჩიე",
+    desc: "ლიცენზირებული პედაგოგი ან საგნის ექსპერტი — გაფილტრე საგნის, ბიუჯეტის, ლოკაციისა და ფორმატის მიხედვით.",
     icon: "🔍",
   },
   {
     step: "02",
-    title: "დაჯავშნე გაკვეთილი",
-    desc: "დაათვალიერე ხელმისაწვდომი დრო, მონიშნე საათი. გადაიხადე უსაფრთხოდ ონლაინ — ფული ჩვენთანაა გაკვეთილამდე.",
+    title: "დაჯავშნე",
+    desc: "ინდივიდუალური ან ჯგუფური გაკვეთილი — დაათვალიერე ხელმისაწვდომი დრო და გადაიხადე უსაფრთხოდ ონლაინ.",
     icon: "📅",
   },
   {
     step: "03",
-    title: "ისწავლე. შეაფასე.",
-    desc: "მასწავლებელმა ჩაატარა გაკვეთილი? შეაფასე პროცესი. დადებითი შეფასების შემთხვევაში, თანხა მასწავლებელს ჩაერიცხება. პრეტენზიის შემთხვევაში, გთხოვთ, მოგვმართოთ გაკვეთილის დასრულებიდან 24 საათის განმავლობაში.",
+    title: "ისწავლე",
+    desc: "Jitsi-ს უსაფრთხო გარემოში — ონლაინ გაკვეთილი პირდაპირ პლატფორმაზე, კამერით და ეკრანის გაზიარებით.",
     icon: "🎓",
+  },
+  {
+    step: "04",
+    title: "შეაფასე",
+    desc: "შედეგი დამოკიდებულია შენს კმაყოფილებაზე. დადებითი შეფასებისას თანხა მასწავლებელს ჩაერიცხება.",
+    icon: "⭐",
   },
 ];
 
@@ -197,21 +203,23 @@ export default async function HomePage() {
 
             {/* H1 */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-3 md:mb-6 leading-[1.05]">
-              იპოვე{" "}
+              განათლება{" "}
               <span className="relative inline-block">
-                <span className="text-emerald-400 italic">სანდო</span>
+                <span className="text-emerald-400 italic">საზღვრების</span>
                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none" preserveAspectRatio="none" style={{height:"6px"}}>
                   <path d="M0 6 Q50 0 100 5 Q150 9 200 4" stroke="#34d399" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
                 </svg>
               </span>{" "}
-              მასწავლებელი
+              გარეშე
             </h1>
+            <p className="text-white/90 text-lg sm:text-2xl font-semibold mb-3 md:mb-4">
+              თქვენი შვილის წარმატების გზა.
+            </p>
 
             {/* Subheadline */}
-            <p className="text-white/75 text-base sm:text-xl max-w-xl mb-4 md:mb-10 font-light leading-relaxed">
-              ვერიფიცირებული მასწავლებლები ნებისმიერ საგანში.
-              ონლაინ ან ადგილზე — შენთვის ხელსაყრელ დროს.
-              <strong className="text-white font-semibold"> გარანტირებული</strong> გადახდის სისტემით.
+            <p className="text-white/75 text-base sm:text-lg max-w-xl mb-4 md:mb-10 font-light leading-relaxed">
+              ჩვენ ვაერთიანებთ გამოცდილ მასწავლებლებს და ცოდნის მოწყურებულ მოსწავლეებს
+              <strong className="text-white font-semibold"> უსაფრთხო, გამჭვირვალე და მოქნილ</strong> ონლაინ გარემოში.
             </p>
 
             {/* Match widget */}
@@ -329,6 +337,62 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ══ MISSION ═══════════════════════════════════════════════════════════ */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="inline-block bg-emerald-50 text-emerald-700 text-xs font-semibold px-4 py-1.5 rounded-full mb-5 uppercase tracking-widest">ჩვენი მისია</span>
+          <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight mb-6 leading-tight">
+            სწორი მასწავლებელი ცვლის<br />
+            <span className="text-emerald-600">მოსწავლის ცხოვრებას</span>
+          </h2>
+          <p className="text-gray-500 text-lg font-light leading-relaxed max-w-2xl mx-auto">
+            TutorHub შევქმენით იმისთვის, რომ სწავლის პროცესი გავხადოთ <strong className="text-gray-700 font-semibold">მარტივი, სამართლიანი და შედეგზე ორიენტირებული</strong>. ჩვენ გვჯერა, რომ სწორი მასწავლებელი ცვლის მოსწავლის ცხოვრებას.
+          </p>
+        </div>
+      </section>
+
+      {/* ══ TRUST BLOCK ════════════════════════════════════════════════════════ */}
+      <section className="py-20 bg-gray-50/70">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-3">უსაფრთხოების გარანტია</h2>
+            <p className="text-gray-400 text-sm max-w-sm mx-auto">სამი მიზეზი, რის გამოც ჩვენ გენდობით</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: "🔒",
+                color: "bg-emerald-50 text-emerald-600",
+                title: "გამჭვირვალე ანგარიშსწორება",
+                desc: "თქვენი თანხა დაცულია მანამ, სანამ გაკვეთილის შედეგით კმაყოფილი არ დარჩებით. გადახდა მხოლოდ წარმატების შემდეგ.",
+              },
+              {
+                icon: "✅",
+                color: "bg-blue-50 text-blue-600",
+                title: "მასწავლებლების ვერიფიკაცია",
+                desc: "ყველა მასწავლებელი გადის შემოწმებას, რათა თქვენმა შვილმა მხოლოდ საუკეთესო ცოდნა მიიღოს. განათლება, გამოცდილება, ლიცენზია.",
+              },
+              {
+                icon: "👨‍👩‍👧",
+                color: "bg-violet-50 text-violet-600",
+                title: "მშობლის კონტროლი",
+                desc: "იყავი პროცესის ნაწილი — აკონტროლე შენი შვილის პროგრესი და დავალებები რეალურ დროში საკუთარი პანელიდან.",
+              },
+            ].map((item, i) => (
+              <div key={i} className="bg-white border border-gray-100 rounded-2xl p-7 hover:shadow-md transition-shadow flex flex-col gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 ${item.color}`}>
+                  {item.icon}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-2 text-base">{item.title}</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed font-light">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ══ HOW IT WORKS ══════════════════════════════════════════════════════ */}
       <section id="how-it-works" className="py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -337,9 +401,9 @@ export default async function HomePage() {
             <p className="text-gray-400 max-w-md mx-auto text-sm">სამი ნაბიჯი — და შეგიძლია დაიწყო სწავლა</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
             {/* Connector line — desktop only */}
-            <div className="hidden md:block absolute top-10 left-[22%] right-[22%] h-0.5 bg-gradient-to-r from-emerald-200 via-emerald-300 to-emerald-200 -z-0" />
+            <div className="hidden lg:block absolute top-10 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-emerald-200 via-emerald-300 to-emerald-200 -z-0" />
 
             {HOW_IT_WORKS.map((s, i) => (
               <div key={i} className="relative bg-white border border-gray-100 rounded-2xl p-7 hover:shadow-md transition-shadow z-10">
