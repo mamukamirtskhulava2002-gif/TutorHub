@@ -240,7 +240,7 @@ export default async function HomePage() {
 
             {/* Subheadline */}
             <p className="text-white/75 text-base sm:text-lg max-w-xl mb-4 md:mb-10 font-light leading-relaxed">
-              ჩვენ ვაერთიანებთ გამოცდილ მასწავლებლებს და ცოდნის მოწყურებულ მოსწავლეებს
+              ჩვენ ვაერთიანებთ გამოცდილ მასწავლებლებს და ცოდნის მაძიებელ მოსწავლეებს
               <strong className="text-white font-semibold"> უსაფრთხო, გამჭვირვალე და მოქნილ</strong> ონლაინ გარემოში.
             </p>
 

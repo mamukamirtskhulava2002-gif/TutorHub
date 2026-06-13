@@ -22,7 +22,7 @@ export default function AboutPage() {
             <span className="text-emerald-600">თქვენი შვილის წარმატების გზა</span>
           </h1>
           <p className="text-gray-500 text-lg font-light leading-relaxed max-w-2xl mx-auto">
-            ჩვენ ვაერთიანებთ გამოცდილ მასწავლებლებს და ცოდნის მოწყურებულ მოსწავლეებს
+            ჩვენ ვაერთიანებთ გამოცდილ მასწავლებლებს და ცოდნის მაძიებელ მოსწავლეებს
             <strong className="text-gray-700 font-semibold"> უსაფრთხო, გამჭვირვალე და მოქნილ</strong> ონლაინ გარემოში.
           </p>
         </div>
