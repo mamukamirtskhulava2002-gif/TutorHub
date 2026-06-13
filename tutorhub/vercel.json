@@ -18,7 +18,7 @@
     },
     {
       "path": "/api/cron/cleanup-recordings",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
