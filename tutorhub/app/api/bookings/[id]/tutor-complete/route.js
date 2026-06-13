@@ -72,10 +72,15 @@ export async function POST(request, { params }) {
       })
       .catch((err) => console.error("Notification error:", err.message));
 
-    // Fire-and-forget: SMS sending (not yet integrated)
-    console.log(
-      `[SMS fire-and-forget] Would send SMS to student ${booking.student_id} with confirm token: ${completionToken}`
-    );
+    // Save lesson session record (visible to admin for 24h)
+    await supabase.from("lesson_recordings").upsert(
+      {
+        booking_id: bookingId,
+        recording_url: `https://meet.jit.si/TutorHub-Room-${bookingId}`,
+        expires_at: expiresAt,
+      },
+      { onConflict: "booking_id" }
+    ).catch(() => {});
 
     return NextResponse.json({ success: true, token: completionToken });
   } catch (err) {

@@ -454,6 +454,8 @@ export default function TutorProfilePage() {
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
     const url = publicUrl + "?t=" + Date.now();
     await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
+    // Sync to tutors.photo_url so landing page shows the updated photo
+    await supabase.from("tutors").update({ photo_url: url }).eq("id", userId);
     setAvatarUrl(url);
     setAvatarMsg({ type: "success", text: "✅ ფოტო ატვირთულია!" });
     setTimeout(() => setAvatarMsg({ type: "", text: "" }), 3000);
@@ -469,6 +471,7 @@ export default function TutorProfilePage() {
       await supabase.storage.from("avatars").remove([decodeURIComponent(pathMatch[1])]);
     }
     await supabase.from("profiles").update({ avatar_url: null }).eq("id", userId);
+    await supabase.from("tutors").update({ photo_url: null }).eq("id", userId);
     setAvatarUrl(null);
     setAvatarMsg({ type: "success", text: "✅ ფოტო წაიშალა." });
     setTimeout(() => setAvatarMsg({ type: "", text: "" }), 3000);

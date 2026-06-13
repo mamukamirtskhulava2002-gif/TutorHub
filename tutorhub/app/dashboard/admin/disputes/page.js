@@ -293,7 +293,16 @@ export default function AdminDisputesPage() {
                 {/* Reason */}
                 <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4">
                   <p className="text-xs font-semibold text-gray-500 mb-1">📋 დავის მიზეზი</p>
-                  <p className="text-sm text-gray-700">{d.reason || "მიზეზი მითითებული არ არის"}</p>
+                  {d.reason?.startsWith("student_absent") ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                        🚫 მოსწ. არ გამოჩ.
+                      </span>
+                      <p className="text-sm text-gray-700">მასწავლებელმა განაცხადა — სტუდენტი არ გამოცხადდა გაკვეთილზე. 24სთ-ში ავტ. მოგვარება.</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700">{d.reason || "მიზეზი მითითებული არ არის"}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">

@@ -51,7 +51,7 @@ const HOW_IT_WORKS = [
   {
     step: "03",
     title: "ისწავლე. შეაფასე.",
-    desc: "ჩაატარე გაკვეთილი ონლაინ ან პირისპირ. დარჩი კმაყოფილი? — მასწავლებელი იღებს თანხას. არა? — 24 საათი გაქვს გასაჩივრების.",
+    desc: "მასწავლებელმა ჩაატარა გაკვეთილი? შეაფასე პროცესი. დადებითი შეფასების შემთხვევაში, თანხა მასწავლებელს ჩაერიცხება. პრეტენზიის შემთხვევაში, გთხოვთ, მოგვმართოთ გაკვეთილის დასრულებიდან 24 საათის განმავლობაში.",
     icon: "🎓",
   },
 ];
@@ -119,7 +119,7 @@ export default async function HomePage() {
       supabase.from("tutors").select("*", { count: "exact", head: true }).eq("is_verified", true),
       supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
       supabase.from("tutors")
-        .select("id, subject, price_per_hour, rating, review_count, photo_url, city, is_online, is_offline, profiles!id(full_name)")
+        .select("id, subject, price_per_hour, rating, review_count, photo_url, city, is_online, is_offline, profiles!id(full_name, avatar_url)")
         .eq("is_verified", true)
         .order("rating", { ascending: false })
         .limit(6),
@@ -137,6 +137,8 @@ export default async function HomePage() {
     studentsCount  = sc ?? 0;
     featuredTutors = (tutorsData ?? []).map((t, i) => ({
       ...t,
+      // photo_url from tutors table is canonical; fall back to profiles.avatar_url
+      photo_url:  t.photo_url || t.profiles?.avatar_url || null,
       initials:   getInitials(t.profiles?.full_name),
       colorClass: AVATAR_COLORS[i % AVATAR_COLORS.length],
     }));
@@ -345,7 +347,7 @@ export default async function HomePage() {
                   <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center text-lg flex-shrink-0">
                     {s.icon}
                   </div>
-                  <span className="text-4xl font-black text-gray-100 tabular-nums">{s.step}</span>
+                  <span className="text-4xl font-black text-gray-900 tabular-nums">{s.step}</span>
                 </div>
                 <h3 className="font-bold text-gray-900 mb-2 text-base">{s.title}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed font-light">{s.desc}</p>

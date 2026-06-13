@@ -12,6 +12,7 @@ const NAV = [
   { icon: "💰", label: "გადახდები",     href: "/dashboard/admin/payments" },
   { icon: "⭐", label: "შეფასებები",    href: "/dashboard/admin/reviews" },
   { icon: "⚖️", label: "დავები",        href: "/dashboard/admin/disputes" },
+  { icon: "🎥", label: "ჩანაწ. (24სთ)", href: "/dashboard/admin/recordings" },
   { icon: "⚙️", label: "პარამეტრები",  href: "/dashboard/admin/settings" },
 ];
 

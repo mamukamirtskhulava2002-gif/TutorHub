@@ -48,7 +48,7 @@ function bookingTypeInfo(b) {
 const STATUS_MAP = {
   upcoming:           ["confirmed"],
   waiting_confirm:    ["pending"],
-  completed_by_tutor: ["completed_by_tutor"],
+  completed_by_tutor: ["completed_by_tutor", "student_absent"],
   past:               ["done"],
   cancelled:          ["cancelled", "disputed"],
 };
@@ -108,6 +108,7 @@ export default function TutorBookingsPage() {
   const [toast, setToast]                 = useState(null);
   const [modal, setModal]                 = useState(null); // { type, bookingId, seriesGroup }
   const [cancelReason, setCancelReason]   = useState("");
+  const [absentLoading, setAbsentLoading] = useState(null);
   const [stats, setStats]                 = useState({ today: 0, weekIncome: 0, monthIncome: 0 });
 
   function showToast(msg, type = "error") {
@@ -304,8 +305,22 @@ export default function TutorBookingsPage() {
       showToast("გაკვეთილი დასრულებულად მოინიშნა! სტუდენტი შეტყობინდება.", "success");
     }
 
+
     setActionLoading(null);
     fetchPendingCount(tutorId);
+  }
+
+  async function markStudentAbsent(bookingId) {
+    setAbsentLoading(bookingId);
+    const res = await fetch(`/api/bookings/${bookingId}/student-absent`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "შეცდომა");
+    } else {
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+      showToast("მოსწავლე მოთხოვნა გაიგზავნა — 24სთ-ში ავტ. მოგვარდება.", "success");
+    }
+    setAbsentLoading(null);
   }
 
   // ─── modal confirm ────────────────────────────────────────────────────────
@@ -650,6 +665,7 @@ export default function TutorBookingsPage() {
                               b.status === "confirmed"          ? "bg-emerald-50 text-emerald-700" :
                               b.status === "pending"            ? "bg-blue-50 text-blue-700" :
                               b.status === "completed_by_tutor" ? "bg-orange-50 text-orange-700" :
+                              b.status === "student_absent"     ? "bg-orange-100 text-orange-700" :
                               b.status === "done"               ? "bg-gray-100 text-gray-500" :
                               b.status === "disputed"           ? "bg-red-50 text-red-600" :
                               "bg-red-50 text-red-400"
@@ -657,6 +673,7 @@ export default function TutorBookingsPage() {
                               {b.status === "confirmed"          ? "დადასტ." :
                                b.status === "pending"            ? "⏳ ახალი" :
                                b.status === "completed_by_tutor" ? "სტ. ადასტ." :
+                               b.status === "student_absent"     ? "🚫 მოსწ. არ გამოჩ." :
                                b.status === "done"               ? "✓ დასრულდა" :
                                b.status === "disputed"           ? "🚩 გასაჩივრდა" :
                                "გაუქმდა"}
@@ -709,6 +726,13 @@ export default function TutorBookingsPage() {
                               </span>
                             </div>
                           )}
+                          {b.status === "student_absent" && (
+                            <div className="mt-2">
+                              <span className="text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium">
+                                🚫 მოსწ. არ გამოჩ. — {autoIn} სთ-ში ავტ. ირიცხება
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -736,26 +760,45 @@ export default function TutorBookingsPage() {
                         )}
 
                         {/* Confirmed actions */}
-                        {b.status === "confirmed" && (
-                          <>
-                            {b.format === "online" && (
-                              <button onClick={() => router.push(`/lesson/${b.id}`)}
-                                className="btn-primary text-xs px-3 py-1.5">
-                                შეერთება →
+                        {b.status === "confirmed" && (() => {
+                          const lessonStart = b.date && b.time_slot
+                            ? new Date(`${b.date}T${b.time_slot}:00`)
+                            : null;
+                          const minSinceStart = lessonStart
+                            ? (Date.now() - lessonStart) / 60000
+                            : -1;
+                          const lessonStarted = minSinceStart >= 10;
+
+                          return (
+                            <>
+                              {b.format === "online" && (
+                                <button onClick={() => router.push(`/lesson/${b.id}`)}
+                                  className="btn-primary text-xs px-3 py-1.5">
+                                  შეერთება →
+                                </button>
+                              )}
+                              <button onClick={() => openConfirm("complete", b.id)}
+                                disabled={loading_}
+                                className="btn-secondary text-xs px-3 py-1.5">
+                                {actionLoading === b.id + "completed_by_tutor" ? "..." : "დასრულება ✓"}
                               </button>
-                            )}
-                            <button onClick={() => openConfirm("complete", b.id)}
-                              disabled={loading_}
-                              className="btn-secondary text-xs px-3 py-1.5">
-                              {actionLoading === b.id + "completed_by_tutor" ? "..." : "დასრულება ✓"}
-                            </button>
-                            <button onClick={() => openConfirm("cancel", b.id, null, b)}
-                              disabled={loading_}
-                              className="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all border border-red-100">
-                              გაუქმება
-                            </button>
-                          </>
-                        )}
+                              {lessonStarted && (
+                                <button
+                                  onClick={() => markStudentAbsent(b.id)}
+                                  disabled={absentLoading === b.id}
+                                  title="გაკვეთილი დაიწყო 10+ წუთის წინ — მოსწ. არ გამოჩნდა"
+                                  className="text-xs text-orange-600 border border-orange-200 px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-all disabled:opacity-50">
+                                  {absentLoading === b.id ? "..." : "🚫 მოსწ. არ გამოცხ."}
+                                </button>
+                              )}
+                              <button onClick={() => openConfirm("cancel", b.id, null, b)}
+                                disabled={loading_}
+                                className="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all border border-red-100">
+                                გაუქმება
+                              </button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

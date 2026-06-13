@@ -112,6 +112,7 @@ function LessonsContent() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const [disputeLesson, setDisputeLesson]         = useState(null);
+  const [disputeType, setDisputeType]             = useState("");
   const [disputeReason, setDisputeReason]         = useState("");
   const [submittingDispute, setSubmittingDispute] = useState(false);
 
@@ -248,16 +249,19 @@ function LessonsContent() {
 
   async function submitDispute(e) {
     e.preventDefault();
-    if (!disputeReason.trim()) return;
+    if (!disputeType) return;
     setSubmittingDispute(true);
     const supabase = createClient();
+    const fullReason = disputeReason.trim()
+      ? `${disputeType}: ${disputeReason.trim()}`
+      : disputeType;
     const { error } = await supabase.from("disputes").insert({
       booking_id: disputeLesson.id, student_id: studentId,
-      tutor_id: disputeLesson.tutor_id, reason: disputeReason, status: "open",
+      tutor_id: disputeLesson.tutor_id, reason: fullReason, status: "open",
     });
     if (!error) {
       await supabase.from("bookings").update({
-        status: "disputed", dispute_reason: disputeReason,
+        status: "disputed", dispute_reason: fullReason,
         disputed_at: new Date().toISOString(),
       }).eq("id", disputeLesson.id);
     }
@@ -266,6 +270,7 @@ function LessonsContent() {
       setAlert({ type: "error", msg: "გასაჩივრება ვერ მოხერხდა" });
     } else {
       setDisputeLesson(null);
+      setDisputeType("");
       setDisputeReason("");
       setAlert({ type: "success", msg: "გასაჩივრება გაიგზავნა — ადმინი განიხილავს" });
       loadData();
@@ -598,11 +603,20 @@ function LessonsContent() {
                             ✓ დადასტ.
                           </button>
                           <button
-                            onClick={() => { setDisputeLesson(lesson); setDisputeReason(""); }}
+                            onClick={() => { setDisputeLesson(lesson); setDisputeType(""); setDisputeReason(""); }}
                             className="text-xs text-red-500 border border-red-200 px-4 py-1.5 rounded-xl hover:bg-red-50 transition-all">
-                            🚩 გასაჩ.
+                            ⚠️ პრობლემა
                           </button>
                         </>
+                      )}
+
+                      {/* Dispute on past confirmed lesson (teacher didn't show) */}
+                      {isConfirmed && lesson.date && new Date(`${lesson.date}T${lesson.time_slot}:00`) < new Date() && (
+                        <button
+                          onClick={() => { setDisputeLesson(lesson); setDisputeType("მასწავლებელი არ გამოცხადდა"); setDisputeReason(""); }}
+                          className="text-xs text-orange-500 border border-orange-200 px-4 py-1.5 rounded-xl hover:bg-orange-50 transition-all">
+                          ⚠️ პრობლემა
+                        </button>
                       )}
 
                       {lesson.status === "done" && lesson.tutor_id && (() => {
@@ -726,24 +740,69 @@ function LessonsContent() {
       {disputeLesson && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-black text-gray-900 mb-1">🚩 გასაჩივრება</h3>
-            <p className="text-sm text-gray-400 mb-1">{disputeLesson.tutors?.profiles?.full_name}</p>
-            <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4 text-xs text-red-700">
-              გასაჩივრება გადაიგზავნება ადმინისტრატორთან. ვიდეო ზარის ლოგები შემოწმდება.
-            </div>
+            <h3 className="text-lg font-black text-gray-900 mb-1">⚠️ პრობლემის შეტყობინება</h3>
+            <p className="text-sm text-gray-400 mb-4">{disputeLesson.tutors?.profiles?.full_name}</p>
+
             <form onSubmit={submitDispute} className="space-y-4">
+              {/* Reason type cards */}
               <div>
-                <label className="label">მიზეზი</label>
-                <textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)}
-                  placeholder="მაგ: მასწავლებელი არ გამოცხადდა..."
-                  className="input resize-none h-28" required />
+                <p className="text-xs font-semibold text-gray-600 mb-2">პრობლემის ტიპი *</p>
+                <div className="space-y-2">
+                  {[
+                    { key: "მასწავლებელი არ გამოცხადდა", icon: "🚫", desc: "მასწავლებელი გაკვეთილზე არ მოვიდა" },
+                    { key: "გაკვეთილი არ ჩატარდა / არაპროფ. მიდგომა", icon: "📉", desc: "გაკვეთილი ვერ ჩატარდა ან ხარისხი არ შეესაბამება" },
+                    { key: "ტექნიკური ხარვეზები", icon: "🔧", desc: "კავშირის ან ტექნიკური პრობლემა" },
+                  ].map(opt => (
+                    <label key={opt.key}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        disputeType === opt.key
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}>
+                      <input
+                        type="radio"
+                        name="disputeType"
+                        value={opt.key}
+                        checked={disputeType === opt.key}
+                        onChange={() => setDisputeType(opt.key)}
+                        className="mt-0.5 accent-red-500"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{opt.icon} {opt.key}</p>
+                        <p className="text-xs text-gray-500">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-xs font-semibold text-gray-600 block mb-1">
+                  დეტალური აღწერა (სურვ.)
+                </label>
+                <textarea
+                  value={disputeReason}
+                  onChange={e => setDisputeReason(e.target.value)}
+                  placeholder="მოკლედ აღწერეთ რა მოხდა..."
+                  className="input resize-none h-20 text-sm"
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                📋 განაჩენი გადაიგზავნება ადმინისტრატორთან. გაკვეთილის ლოგები შემოწმდება.
+              </div>
+
               <div className="flex gap-2">
-                <button type="button" onClick={() => setDisputeLesson(null)}
-                  className="flex-1 btn-secondary py-2.5">გაუქმება</button>
-                <button type="submit" disabled={submittingDispute || !disputeReason.trim()}
+                <button type="button"
+                  onClick={() => { setDisputeLesson(null); setDisputeType(""); setDisputeReason(""); }}
+                  className="flex-1 btn-secondary py-2.5">
+                  გაუქმება
+                </button>
+                <button type="submit"
+                  disabled={submittingDispute || !disputeType}
                   className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
-                  {submittingDispute ? "იგზავნება..." : "🚩 გაგზავნა"}
+                  {submittingDispute ? "იგზავნება..." : "⚠️ გაგზავნა"}
                 </button>
               </div>
             </form>

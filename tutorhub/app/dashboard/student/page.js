@@ -75,12 +75,21 @@ const [unreadCount, setUnreadCount]   = useState(0);
     async function loadData(userId) {
       const { data: lessons } = await supabase
         .from("bookings")
-        .select("id,date,time_slot,status,format,tutors(id,profiles(full_name),subject)")
+        .select("id,date,time_slot,duration_hours,status,format,tutors(id,profiles(full_name),subject)")
         .eq("student_id", userId)
         .in("status", ["confirmed","pending"])
         .order("date", { ascending:true })
-        .limit(3);
-      if (lessons) setUpcoming(lessons);
+        .limit(10);
+      if (lessons) {
+        const cutoff = Date.now() - 3 * 3600000; // 3 hours ago
+        const filtered = lessons.filter(l => {
+          if (!l.date || !l.time_slot) return true;
+          const end = new Date(`${l.date}T${l.time_slot}`).getTime()
+            + (l.duration_hours || 1) * 3600000;
+          return end > cutoff;
+        });
+        setUpcoming(filtered.slice(0, 3));
+      }
 
       const { data: doneLessons } = await supabase
         .from("bookings")
