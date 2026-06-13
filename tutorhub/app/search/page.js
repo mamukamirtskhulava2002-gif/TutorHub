@@ -18,9 +18,26 @@ import {
 const TutorMap = dynamic(() => import("@/components/TutorMap"), { ssr: false });
 
 const SUBJECTS = [
-  "მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","ქართული",
-  "ინგლისური","ისტორია","პროგრამირება","გეოგრაფია","ეკონომიკა",
-  "გერმანული","რუსული",
+  // სკოლა
+  "მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","გეოგრაფია","ისტორია",
+  "ქართული ენა და ლიტერატურა","სამოქალაქო განათლება","ინფორმატიკა",
+  // უცხო ენები
+  "ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა",
+  "ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა",
+  "IELTS / TOEFL / SAT მომზადება",
+  // პროგრამირება & ტექნოლოგია
+  "Python","JavaScript","Java","C# / C++","Swift",
+  "UI/UX დიზაინი","გრაფიკული დიზაინი","3D მოდელირება",
+  "კიბერუსაფრთხოება","Cloud Computing","მონაცემთა ბაზები (SQL)",
+  // ბიზნესი & ფინანსები
+  "ციფრული მარკეტინგი","SMM და SEO","ბუღალტერია",
+  "ფინანსური მოდელირება","პროექტების მართვა (Agile/Scrum)",
+  // მუსიკა & ხელოვნება
+  "ფორტეპიანო","გიტარა","ვიოლინო","დრამი","სოლფეჯიო","მუსიკალური თეორია",
+  "ხატვა","ფოტოგრაფია","კინომონტაჟი",
+  // სხვა
+  "იოგა და მედიტაცია","კულინარია","ჭადრაკი","საჯარო გამოსვლები",
+  "სწრაფი კითხვა","მართვის მოწმობის თეორია",
 ];
 const CITIES   = ["თბილისი","ბათუმი","ქუთაისი","რუსთავი","გორი","ზუგდიდი"];
 const COLORS   = ["avatar-green","avatar-blue","avatar-amber","avatar-purple","avatar-coral"];
@@ -345,28 +362,100 @@ function SkeletonCard() {
 }
 
 // ─────────────────────────────────────
+// Subject searchable dropdown
+// ─────────────────────────────────────
+function SubjectDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+    else setQuery("");
+  }, [open]);
+
+  const filtered = query.trim()
+    ? SUBJECTS.filter(s => s.toLowerCase().includes(query.toLowerCase()))
+    : SUBJECTS;
+
+  return (
+    <div ref={ref} className="relative">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">საგანი</p>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-sm transition-all ${
+          value
+            ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
+            : "border-gray-200 text-gray-500 hover:border-emerald-300"
+        }`}
+      >
+        <span className="truncate">{value || "საგნის არჩევა..."}</span>
+        <span className="ml-2 text-gray-400 flex-shrink-0">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          {/* Search input */}
+          <div className="p-2 border-b border-gray-100">
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="საგნის ძებნა..."
+              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 outline-none"
+            />
+          </div>
+          {/* List */}
+          <div className="max-h-56 overflow-y-auto">
+            {value && (
+              <button
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 border-b border-gray-50"
+              >
+                ✕ გასუფთავება
+              </button>
+            )}
+            {filtered.length === 0 && (
+              <p className="px-3 py-4 text-sm text-gray-400 text-center">არ მოიძებნა</p>
+            )}
+            {filtered.map(s => (
+              <button
+                key={s}
+                onClick={() => { onChange(s === value ? "" : s); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  s === value
+                    ? "bg-emerald-50 text-emerald-700 font-semibold"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────
 // Filters Panel — must be OUTSIDE SearchContent to avoid remounting
 // ─────────────────────────────────────
 function FiltersPanel({ filters, setF, geoLoading, handleNearMe, filtered, toggleDay, hasActive, clearAll }) {
   return (
     <div className="space-y-5">
 
-      {/* Subject */}
-      <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">საგანი</p>
-        <div className="flex flex-wrap gap-1.5">
-          {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setF("subject", filters.subject === s ? "" : s)}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
-                filters.subject === s
-                  ? "bg-emerald-600 text-white border-emerald-600"
-                  : "border-gray-200 text-gray-500 hover:border-emerald-300 hover:text-emerald-600"
-              }`}>
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Subject — searchable dropdown */}
+      <SubjectDropdown value={filters.subject} onChange={v => setF("subject", v)} />
 
       {/* Price */}
       <div>
