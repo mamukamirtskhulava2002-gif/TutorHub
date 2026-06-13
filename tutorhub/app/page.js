@@ -137,8 +137,8 @@ export default async function HomePage() {
     studentsCount  = sc ?? 0;
     featuredTutors = (tutorsData ?? []).map((t, i) => ({
       ...t,
-      // photo_url from tutors table is canonical; fall back to profiles.avatar_url
-      photo_url:  t.photo_url || t.profiles?.avatar_url || null,
+      // profiles.avatar_url is always up-to-date (user edits it directly)
+      photo_url:  t.profiles?.avatar_url || t.photo_url || null,
       initials:   getInitials(t.profiles?.full_name),
       colorClass: AVATAR_COLORS[i % AVATAR_COLORS.length],
     }));
