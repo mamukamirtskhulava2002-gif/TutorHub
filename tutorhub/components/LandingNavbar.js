@@ -28,7 +28,7 @@ export default function LandingNavbar() {
         </Link>
 
         {/* Center nav — desktop only */}
-        <div className="hidden md:flex items-center gap-7">
+        <div className="hidden md:flex items-center gap-4 lg:gap-6">
           {[
             { href: "/about",        label: "ჩვენს შესახებ",  isLink: true },
             { href: "/search",       label: "მასწავლებლები",  isLink: true },
@@ -37,14 +37,14 @@ export default function LandingNavbar() {
           ].map(({ href, label, isLink }) =>
             isLink ? (
               <Link key={href} href={href}
-                className={`text-sm font-medium transition-colors duration-300 ${
+                className={`text-xs font-medium whitespace-nowrap transition-colors duration-300 ${
                   t ? "text-gray-600 hover:text-gray-900" : "text-white/85 hover:text-white"
                 }`}>
                 {label}
               </Link>
             ) : (
               <a key={href} href={href}
-                className={`text-sm font-medium transition-colors duration-300 ${
+                className={`text-xs font-medium whitespace-nowrap transition-colors duration-300 ${
                   t ? "text-gray-600 hover:text-gray-900" : "text-white/85 hover:text-white"
                 }`}>
                 {label}
@@ -54,21 +54,21 @@ export default function LandingNavbar() {
         </div>
 
         {/* Right CTA — desktop */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1.5">
           <Link href="/auth"
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-300 whitespace-nowrap ${
               t ? "text-gray-700 hover:text-gray-900 hover:bg-gray-100" : "text-white/85 hover:text-white hover:bg-white/10"
             }`}>
             შესვლა
           </Link>
           <Link href="/register?role=tutor"
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-300 whitespace-nowrap ${
               t ? "bg-gray-900 text-white hover:bg-gray-700" : "bg-white/15 backdrop-blur-sm text-white border border-white/30 hover:bg-white/25"
             }`}>
-            გახდი მასწავლებელი
+            გახდი მასწ.
           </Link>
           <Link href="/register"
-            className="px-5 py-2 text-sm font-semibold rounded-xl bg-emerald-500 text-white hover:bg-emerald-400 transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-400 transition-colors whitespace-nowrap">
             რეგისტრაცია →
           </Link>
         </div>
