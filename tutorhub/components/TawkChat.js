@@ -26,7 +26,6 @@ function shouldHide(path) {
 export default function TawkChat() {
   const pathname = usePathname();
 
-  // Show/hide widget on route change
   useEffect(() => {
     function apply() {
       if (!window.Tawk_API) return;
@@ -37,12 +36,10 @@ export default function TawkChat() {
       }
     }
     apply();
-    // Retry once after widget might have loaded
     const t = setTimeout(apply, 2500);
     return () => clearTimeout(t);
   }, [pathname]);
 
-  // Error suppression + user identification
   useEffect(() => {
     const _origError = console.error;
     console.error = (...args) => {
@@ -100,7 +97,6 @@ export default function TawkChat() {
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
 
       Tawk_API.onLoad = function () {
-        // Hide on restricted pages on first load
         var path = window.location.pathname;
         if (path.startsWith('/auth') || path.startsWith('/register') ||
             path === '/login' || path === '/forgot-password' ||
@@ -108,64 +104,110 @@ export default function TawkChat() {
           Tawk_API.hideWidget();
         }
 
-        // Draggable bubble — mobile only
         if (window.innerWidth >= 768) return;
 
-        function initDrag() {
-          var el = document.getElementById('tawk-bubble-container');
-          if (!el) { setTimeout(initDrag, 500); return; }
+        function findWidget() {
+          // Try known IDs first
+          var ids = ['tawk-bubble-container', 'tawk-widget-container', 'tawk-tooltip'];
+          for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+            if (el) return el;
+          }
+          // Find via iframe and walk up to fixed/absolute parent
+          var iframes = document.querySelectorAll('iframe');
+          for (var j = 0; j < iframes.length; j++) {
+            var src = iframes[j].src || '';
+            if (src.indexOf('tawk.to') > -1) {
+              var p = iframes[j].parentElement;
+              while (p && p !== document.body) {
+                var pos = window.getComputedStyle(p).position;
+                if (pos === 'fixed' || pos === 'absolute') return p;
+                p = p.parentElement;
+              }
+              return iframes[j].parentElement;
+            }
+          }
+          return null;
+        }
 
-          // Restore saved position or set default above bottom nav
+        function initDrag() {
+          var widgetEl = findWidget();
+          if (!widgetEl) { setTimeout(initDrag, 800); return; }
+
+          // Apply saved or default position
           try {
             var saved = localStorage.getItem('tawk_bubble_pos');
             if (saved) {
-              var p = JSON.parse(saved);
-              el.style.left   = p.l;
-              el.style.right  = 'auto';
-              el.style.setProperty('bottom', p.b, 'important');
+              var pos = JSON.parse(saved);
+              widgetEl.style.left  = pos.l;
+              widgetEl.style.right = 'auto';
+              widgetEl.style.setProperty('bottom', pos.b, 'important');
             } else {
-              el.style.setProperty('bottom', '80px', 'important');
+              widgetEl.style.setProperty('bottom', '80px', 'important');
             }
           } catch(e) {
-            el.style.setProperty('bottom', '80px', 'important');
+            widgetEl.style.setProperty('bottom', '80px', 'important');
           }
+
+          // Transparent overlay sits on top of the widget so touch events
+          // reach us instead of the iframe inside the widget.
+          var overlay = document.createElement('div');
+          overlay.style.cssText =
+            'position:fixed;z-index:2147483647;background:transparent;' +
+            'touch-action:none;-webkit-tap-highlight-color:transparent;';
+          document.body.appendChild(overlay);
+
+          function syncOverlay() {
+            var r = widgetEl.getBoundingClientRect();
+            overlay.style.left   = r.left   + 'px';
+            overlay.style.top    = r.top    + 'px';
+            overlay.style.width  = r.width  + 'px';
+            overlay.style.height = r.height + 'px';
+          }
+          syncOverlay();
 
           var sx, sy, origL, origB, dragging;
 
-          el.addEventListener('touchstart', function(e) {
+          overlay.addEventListener('touchstart', function(e) {
             var touch = e.touches[0];
             sx = touch.clientX;
             sy = touch.clientY;
-            var rect = el.getBoundingClientRect();
-            origL = rect.left;
-            origB = window.innerHeight - rect.bottom;
+            var r = widgetEl.getBoundingClientRect();
+            origL = r.left;
+            origB = window.innerHeight - r.bottom;
             dragging = false;
-            el.style.transition = 'none';
+            widgetEl.style.transition = 'none';
           }, { passive: true });
 
-          el.addEventListener('touchmove', function(e) {
+          overlay.addEventListener('touchmove', function(e) {
             var touch = e.touches[0];
             var dx = touch.clientX - sx;
             var dy = touch.clientY - sy;
             if (!dragging && Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
             dragging = true;
             e.preventDefault();
-            var rect = el.getBoundingClientRect();
-            var newL = Math.max(0, Math.min(window.innerWidth  - rect.width,  origL + dx));
-            var newB = Math.max(10, Math.min(window.innerHeight - rect.height, origB - dy));
-            el.style.left  = newL + 'px';
-            el.style.right = 'auto';
-            el.style.setProperty('bottom', newB + 'px', 'important');
+            var r = widgetEl.getBoundingClientRect();
+            var newL = Math.max(0, Math.min(window.innerWidth  - r.width,  origL + dx));
+            var newB = Math.max(10, Math.min(window.innerHeight - r.height, origB - dy));
+            widgetEl.style.left  = newL + 'px';
+            widgetEl.style.right = 'auto';
+            widgetEl.style.setProperty('bottom', newB + 'px', 'important');
+            syncOverlay();
           }, { passive: false });
 
-          el.addEventListener('touchend', function() {
+          overlay.addEventListener('touchend', function() {
+            syncOverlay();
             if (dragging) {
               try {
                 localStorage.setItem('tawk_bubble_pos', JSON.stringify({
-                  l: el.style.left,
-                  b: el.style.bottom
+                  l: widgetEl.style.left,
+                  b: widgetEl.style.bottom
                 }));
               } catch(e) {}
+            } else {
+              // Tap — briefly hide overlay so click reaches the widget
+              overlay.style.display = 'none';
+              setTimeout(function() { overlay.style.display = ''; }, 400);
             }
           });
         }
