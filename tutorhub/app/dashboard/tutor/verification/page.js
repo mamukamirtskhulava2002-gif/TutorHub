@@ -219,8 +219,7 @@ export default function TutorVerificationPage() {
               </span>
             </div>
             <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-              1–2 წუთიანი ვიდეო წარდგენა <strong>3×-ით მეტ სტუდენტს</strong> მოგიყვანს.
-              წარადგინე თავი, მოყვი შენი გამოცდილება და რატომ ხარ კარგი მასწავლებელი.
+              ატვირთე 1–2 წუთიანი მოკლე ვიდეო. წარადგინე შენი თავი. კარგად ჩაწერილი ვიდეო <strong>3-ჯერ უფრო მეტ სტუდენტს</strong> იზიდავს, ვიდრე მხოლოდ ტექსტური პროფილი.
             </p>
 
             {tutorData?.intro_video_url ? (
