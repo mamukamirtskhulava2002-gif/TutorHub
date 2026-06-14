@@ -234,12 +234,22 @@ function formatCountdown(ms) {
   return rm ? `${h}სთ ${rm}წთ` : `${h} საათი`;
 }
 
+// ── Booking subject helpers ────────────────────────────────────────────────────
+function getBookingSubject(note, tutorSubjects) {
+  if (note) { const m = note.match(/^\[S:([^\]]+)\]/); if (m) return m[1]; }
+  return Array.isArray(tutorSubjects) ? tutorSubjects[0] : tutorSubjects;
+}
+function getDisplayNote(note) {
+  if (!note) return "";
+  return note.replace(/^\[S:[^\]]+\]\s*/, "").trim();
+}
+
 // ── Slot card visuals ─────────────────────────────────────────────────────────
 function getSlotStyle(slot) {
-  if (slot.status === "full")             return { bg:"bg-orange-100", border:"border-orange-300", text:"text-orange-800", dot:"bg-orange-400" };
-  if (slot.booking_type === "trial")      return { bg:"bg-amber-100",  border:"border-amber-300",  text:"text-amber-800",  dot:"bg-amber-400"  };
-  if (slot.is_group)                      return { bg:"bg-emerald-100",border:"border-emerald-300",text:"text-emerald-800",dot:"bg-emerald-500" };
-  return                                         { bg:"bg-blue-100",   border:"border-blue-300",   text:"text-blue-800",   dot:"bg-blue-500"   };
+  if (slot.status === "full")             return { bg:"bg-orange-100",  border:"border-orange-300",  text:"text-orange-800",  dot:"bg-orange-400"  };
+  if (slot.booking_type === "trial")      return { bg:"bg-amber-100",   border:"border-amber-300",   text:"text-amber-800",   dot:"bg-amber-400"   };
+  if (slot.is_group)                      return { bg:"bg-violet-100",  border:"border-violet-300",  text:"text-violet-800",  dot:"bg-violet-500"  };
+  return                                         { bg:"bg-blue-100",    border:"border-blue-300",    text:"text-blue-800",    dot:"bg-blue-500"    };
 }
 
 function slotTypeIcon(slot) {
@@ -350,7 +360,7 @@ function SlotDetailModal({ item, type, onClose, onCancelled, onRefresh }) {
                 </div>
                 <div>
                   <p className="font-bold text-gray-900">{item.profiles?.full_name || "სტუდენტი"}</p>
-                  <p className="text-xs text-gray-400">{(item.tutors?.subject||[])[0] || "—"} · {item.format === "online" ? "🌐 ონლაინ" : "🏫 პირისპირ"}</p>
+                  <p className="text-xs text-gray-400">{getBookingSubject(item.note, item.tutors?.subject) || "—"} · {item.format === "online" ? "🌐 ონლაინ" : "🏫 პირისპირ"}</p>
                 </div>
                 <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full ${
                   item.status==="confirmed" ? "bg-emerald-100 text-emerald-700" :
@@ -360,9 +370,9 @@ function SlotDetailModal({ item, type, onClose, onCancelled, onRefresh }) {
                   {item.status==="confirmed" ? "✓ დადასტ." : item.status==="pending" ? "⏳" : item.status}
                 </span>
               </div>
-              {item.note && (
+              {getDisplayNote(item.note) && (
                 <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5 text-sm text-blue-800">
-                  💬 {item.note}
+                  💬 {getDisplayNote(item.note)}
                 </div>
               )}
             </div>
@@ -464,6 +474,135 @@ function SlotDetailModal({ item, type, onClose, onCancelled, onRefresh }) {
   );
 }
 
+// ── Slot template edit/create modal ──────────────────────────────────────────
+function SlotTemplateModal({ dayKey, slot, time, onClose, onSave, onDelete }) {
+  const startTime = slot?.start || time;
+  const [dur,         setDur]         = useState(slot ? Number(slot.duration) : 1);
+  const [isGroup,     setIsGroup]     = useState(slot?.isGroup  || false);
+  const [priceInd,    setPriceInd]    = useState(slot?.priceInd ?? 0);
+  const [priceGrp,    setPriceGrp]    = useState(slot?.priceGrp ?? 0);
+  const [buf,         setBuf]         = useState(Number(slot?.buffer ?? 0));
+  const [maxStudents, setMaxStudents] = useState(slot?.maxStudents || 3);
+  const isNew = !slot;
+
+  const endTime = computeEnd(startTime, dur);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+        <div className={`p-5 rounded-t-3xl border-b ${isNew ? "bg-emerald-50 border-emerald-200" : "bg-blue-50 border-blue-200"}`}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isNew ? "text-emerald-700" : "text-blue-700"}`}>
+                {isNew ? "➕ ახალი სლოტი" : "✏️ სლოტის რედაქტირება"}
+              </p>
+              <p className="text-lg font-black text-gray-900">
+                {WEEKDAYS.find(w=>w.key===dayKey)?.full} · {startTime}–{endTime}
+              </p>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 bg-black/10 hover:bg-black/20 rounded-xl flex items-center justify-center text-gray-700 transition-all">✕</button>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">ხანგრძლივობა</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {SLOT_DURATIONS.filter(sd => {
+                const [sh, sm] = startTime.split(":").map(Number);
+                return sh * 60 + sm + Math.round(sd.val * 60) <= 24 * 60;
+              }).map(sd => (
+                <button key={sd.val} type="button" onClick={() => setDur(sd.val)}
+                  className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${
+                    Number(dur) === sd.val ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-500 border-gray-200 hover:border-gray-500"
+                  }`}>{sd.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">ტიპი</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setIsGroup(false)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
+                  !isGroup ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-500 border-gray-200 hover:border-gray-500"
+                }`}>👤 ინდ.</button>
+              <button type="button" onClick={() => setIsGroup(true)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
+                  isGroup ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-500 border-gray-200 hover:border-gray-500"
+                }`}>👥 ჯგ.</button>
+            </div>
+          </div>
+
+          {isGroup && (
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">👥 ჯგ. ლიმიტი</label>
+              <div className="flex gap-1.5">
+                {[2,3,4,5].map(n => (
+                  <button key={n} type="button" onClick={() => setMaxStudents(n)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
+                      maxStudents === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-500 border-gray-200 hover:border-blue-400"
+                    }`}>{n}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1.5 block">👤 ინდ. ფასი სლოტზე</label>
+              <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                <input type="number" min="0" placeholder="0" value={priceInd || ""}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setPriceInd(e.target.value === "" ? 0 : Number(e.target.value))}
+                  className="w-full px-3 py-2.5 text-sm font-semibold outline-none bg-transparent"/>
+                <span className="px-2.5 text-gray-400 text-sm border-l border-gray-200 py-2.5">₾</span>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1.5 block">👥 ჯგ. ფასი სლოტზე</label>
+              <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                <input type="number" min="0" placeholder="0" value={priceGrp || ""}
+                  onFocus={e => e.target.select()}
+                  onChange={e => setPriceGrp(e.target.value === "" ? 0 : Number(e.target.value))}
+                  className="w-full px-3 py-2.5 text-sm font-semibold outline-none bg-transparent"/>
+                <span className="px-2.5 text-gray-400 text-sm border-l border-gray-200 py-2.5">₾</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">⏸ ბუფერი ამ სლოტის შემდეგ</label>
+            <div className="flex gap-1.5">
+              {[0,5,10,15].map(m => (
+                <button key={m} type="button" onClick={() => setBuf(m)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
+                    buf === m ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-500 border-gray-200 hover:border-gray-500"
+                  }`}>{m === 0 ? "0წთ" : `${m}წთ`}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            {!isNew && (
+              <button type="button" onClick={onDelete}
+                className="px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm rounded-2xl border border-red-200 transition-all">
+                🗑 წაშლა
+              </button>
+            )}
+            <button type="button"
+              onClick={() => onSave({ start: startTime, end: endTime, duration: dur, isGroup, priceInd, priceGrp, buffer: buf, maxStudents })}
+              className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-2xl transition-all">
+              {isNew ? "➕ დამატება" : "💾 შენახვა"}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 text-center">ცვლილება შენახდება — გლობალური 💾 ღილაკი საჭიროა.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Hour cell ─────────────────────────────────────────────────────────────────
 // HourCell renders bookings and lesson_slots only.
 // Schedule template slots are rendered as per-day absolute overlays in DayView/WeekView.
@@ -477,7 +616,7 @@ function HourCell({ dateStr, hour, dayKey, viewBookings, viewSlots, compact, onS
   const minH = compact ? 40 : 52;
 
   if (bk) {
-    const subj = (bk.tutors?.subject||[])[0];
+    const subj = getBookingSubject(bk.note, bk.tutors?.subject);
     return (
       <div
         className="relative z-20 bg-red-100 border border-red-300 rounded-lg h-full cursor-pointer hover:bg-red-200 transition-all select-none"
@@ -516,10 +655,10 @@ function HourCell({ dateStr, hour, dayKey, viewBookings, viewSlots, compact, onS
 
   return (
     <div
-      className="rounded-lg h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-all group"
+      className="rounded-lg h-full flex items-center justify-center cursor-pointer hover:bg-emerald-50 transition-all group"
       style={{ minHeight: minH }}
-      onClick={() => onSlotClick({ item: null, type: "create", date: dateStr, time: t })}>
-      <span className={`text-gray-200 font-bold opacity-0 group-hover:opacity-100 transition-opacity ${compact?"text-base":"text-xl"}`}>+</span>
+      onClick={() => onSlotClick({ item: null, type: "template-add", date: dateStr, time: t, dayKey })}>
+      <span className={`text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity ${compact?"text-base":"text-xl"}`}>+</span>
     </div>
   );
 }
@@ -621,19 +760,20 @@ function DayView({ focusDate, savedSchedule, bufferMin, viewBookings, viewSlots,
                   <div key={sl.start}
                     className={`absolute left-1 right-1 rounded-xl border-2 pointer-events-auto cursor-pointer transition-all ${
                       isGrp
-                        ? "bg-blue-50 border-blue-200 hover:bg-blue-100"
+                        ? "bg-violet-50 border-violet-200 hover:bg-violet-100"
                         : "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
                     }`}
                     style={{top: topPx+2, height: Math.max(heightPx-4,24), zIndex:10}}
-                    onClick={() => onSlotClick({item:null, type:"create", date:dateStr, time:sl.start})}>
+                    onClick={() => onSlotClick({item:null, type:"template", date:dateStr, time:sl.start, dayKey, slot:sl})}>
                     <div className="px-2.5 pt-2">
-                      <p className={`font-bold text-sm leading-tight ${isGrp?"text-blue-700":"text-emerald-700"}`}>
+                      <p className={`font-bold text-sm leading-tight ${isGrp?"text-violet-700":"text-emerald-700"}`}>
                         {isGrp?"👥":"👤"} {sl.start}–{fmtTime(sl.end)}
                       </p>
-                      <p className={`text-xs font-semibold mt-0.5 ${isGrp?"text-blue-500":"text-emerald-500"}`}>
+                      <p className={`text-xs font-semibold mt-0.5 ${isGrp?"text-violet-500":"text-emerald-500"}`}>
                         {sl.duration}სთ{price>0?` · ${price}₾`:""}
                         {isGrp&&sl.maxStudents?` · max${sl.maxStudents}`:""}
                       </p>
+                      <p className={`text-[10px] mt-0.5 ${isGrp?"text-violet-400":"text-emerald-400"}`}>✏️ შეცვლა</p>
                     </div>
                   </div>
                 );
@@ -655,7 +795,7 @@ function WeekView({ weekDays, savedSchedule, bufferMin, viewBookings, viewSlots,
           {c:"bg-emerald-200 border border-emerald-300", l:"ხელმისაწვდ."},
           {c:"bg-red-200",      l:"ჯავშანი"},
           {c:"bg-blue-200",     l:"👤 ინდივ."},
-          {c:"bg-emerald-300",  l:"👥 ჯგუფი"},
+          {c:"bg-violet-300",   l:"👥 ჯგუფი"},
           {c:"bg-amber-200",    l:"🎓 საცდელი"},
           {c:"bg-orange-300",   l:"სავსე"},
           {c:"bg-amber-100 border border-amber-300", l:"✈️ შვებ."},
@@ -743,16 +883,16 @@ function WeekView({ weekDays, savedSchedule, bufferMin, viewBookings, viewSlots,
                             <div key={sl.start}
                               className={`absolute pointer-events-auto rounded-lg border cursor-pointer transition-all ${
                                 isGrp
-                                  ? "bg-blue-50/90 border-blue-200 hover:bg-blue-100"
+                                  ? "bg-violet-50/90 border-violet-200 hover:bg-violet-100"
                                   : "bg-emerald-50/90 border-emerald-200 hover:bg-emerald-100"
                               }`}
                               style={{top:topPx+1, height:Math.max(heightPx-2,18), left:2, right:2, zIndex:10}}
-                              onClick={() => onSlotClick({item:null, type:"create", date:dDateStr, time:sl.start})}>
-                              <p className={`text-[9px] font-bold px-1 pt-0.5 leading-tight truncate ${isGrp?"text-blue-700":"text-emerald-700"}`}>
+                              onClick={() => onSlotClick({item:null, type:"template", date:dDateStr, time:sl.start, dayKey:d.key, slot:sl})}>
+                              <p className={`text-[9px] font-bold px-1 pt-0.5 leading-tight truncate ${isGrp?"text-violet-700":"text-emerald-700"}`}>
                                 {isGrp?"👥":"👤"} {sl.start}
                               </p>
-                              <p className={`text-[8px] px-1 leading-tight ${isGrp?"text-blue-500":"text-emerald-500"}`}>
-                                {sl.duration}სთ
+                              <p className={`text-[8px] px-1 leading-tight ${isGrp?"text-violet-500":"text-emerald-500"}`}>
+                                {sl.duration}სთ ✏️
                               </p>
                             </div>
                           );
@@ -786,7 +926,7 @@ function WeekView({ weekDays, savedSchedule, bufferMin, viewBookings, viewSlots,
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm truncate">{b.profiles?.full_name||"სტ."}</p>
-                    <p className="text-xs text-gray-400">{(b.tutors?.subject||[])[0]||""} · {b.duration_hours||1}სთ</p>
+                    <p className="text-xs text-gray-400">{getBookingSubject(b.note, b.tutors?.subject)||""} · {b.duration_hours||1}სთ</p>
                   </div>
                   <p className="text-sm font-bold text-emerald-700 shrink-0">{b.total_price}₾</p>
                 </div>
@@ -903,8 +1043,9 @@ export default function TutorSchedulePage() {
   const [viewSlots,    setViewSlots]    = useState([]);
   const [nextLesson,   setNextLesson]   = useState(null);
   const [todayStats,   setTodayStats]   = useState({ count: 0, income: 0 });
-  const [detailModal,  setDetailModal]  = useState(null); // { item, type }
-  const [createModal,  setCreateModal]  = useState(null); // { date, time }
+  const [detailModal,    setDetailModal]    = useState(null); // { item, type }
+  const [createModal,    setCreateModal]    = useState(null); // { date, time }
+  const [templateModal,  setTemplateModal]  = useState(null); // { dayKey, slot, time }
   const [vacModal,     setVacModal]     = useState(false);
   const [vacFrom,      setVacFrom]      = useState("");
   const [vacUntil,     setVacUntil]     = useState("");
@@ -1113,12 +1254,39 @@ export default function TutorSchedulePage() {
   }
 
   // Slot click handler
-  function handleSlotClick({ item, type, date, time }) {
-    if (type === "create") {
+  function handleSlotClick({ item, type, date, time, dayKey: dk, slot }) {
+    if (type === "template" || type === "template-add") {
+      const key = dk || WEEKDAYS.find(w => w.jsDay === new Date(date + "T00:00").getDay())?.key;
+      setTemplateModal({ dayKey: key, slot: type === "template" ? slot : null, time });
+    } else if (type === "create") {
       setCreateModal({ date, time });
     } else {
       setDetailModal({ item, type });
     }
+  }
+
+  function handleTemplateSave(slotData) {
+    setLocalSchedule(prev => {
+      const key = templateModal.dayKey;
+      const existing = prev[key] || [];
+      const isNew = !templateModal.slot;
+      const updated = isNew
+        ? [...existing, slotData].sort((a, b) => a.start.localeCompare(b.start))
+        : existing.map(s => s.start === templateModal.slot.start ? slotData : s);
+      return { ...prev, [key]: updated };
+    });
+    setTemplateModal(null);
+  }
+
+  function handleTemplateDelete() {
+    const { dayKey: key, slot } = templateModal;
+    if (!slot) { setTemplateModal(null); return; }
+    setLocalSchedule(prev => {
+      const slots = (prev[key] || []).filter(s => s.start !== slot.start);
+      if (!slots.length) { const n = { ...prev }; delete n[key]; return n; }
+      return { ...prev, [key]: slots };
+    });
+    setTemplateModal(null);
   }
 
   const weekStart  = getMonday(focusDate);
@@ -1150,65 +1318,65 @@ export default function TutorSchedulePage() {
         <div className={`sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b transition-all ${
           dirty ? "border-amber-300 shadow-amber-100 shadow-md" : "border-gray-100 shadow-sm"
         }`}>
-          <div className="px-4 md:px-6 py-2.5 flex flex-wrap items-center gap-2 justify-between">
+          <div className="px-4 md:px-6 py-4 flex flex-wrap items-center gap-3 justify-between">
             {/* Left: view + navigation */}
-            <div className="flex items-center gap-2">
-              <div className="flex gap-0.5 bg-gray-100 p-0.5 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-0.5 bg-gray-100 p-1 rounded-xl">
                 {[
                   {key:"day",  icon:"📋", l:"დღე"  },
                   {key:"week", icon:"📅", l:"კვირა"},
                   {key:"month",icon:"🗓", l:"თვე"  },
                 ].map(v => (
                   <button key={v.key} onClick={() => setViewMode(v.key)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                       viewMode===v.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
                     }`}>
                     <span>{v.icon}</span><span className="hidden sm:inline">{v.l}</span>
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button onClick={() => navigate(-1)}
-                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-gray-600 font-bold text-sm transition-all">
+                  className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 font-bold text-lg transition-all">
                   ‹
                 </button>
-                <span className="text-xs font-bold text-gray-700 min-w-[120px] text-center">
+                <span className="text-sm font-bold text-gray-700 min-w-[140px] text-center">
                   {viewMode==="day"   && `${focusDate.getDate()} ${KA_MONTHS[focusDate.getMonth()]}`}
                   {viewMode==="week"  && formatWeekRange(weekStart)}
                   {viewMode==="month" && `${KA_MONTHS_FULL[focusDate.getMonth()].slice(0,3)} ${focusDate.getFullYear()}`}
                 </span>
                 <button onClick={() => navigate(1)}
-                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-gray-600 font-bold text-sm transition-all">
+                  className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 font-bold text-lg transition-all">
                   ›
                 </button>
                 <button onClick={() => setFocusDate(new Date())}
-                  className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition-all">
+                  className="px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-bold rounded-xl hover:bg-emerald-100 transition-all">
                   დღეს
                 </button>
               </div>
-              <span className="text-[10px] text-gray-400 font-medium hidden md:inline">🕐 GE+4</span>
+              <span className="text-xs text-gray-400 font-medium hidden md:inline">🕐 GE+4</span>
             </div>
 
             {/* Right: actions */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {vacation ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-xl border border-amber-200 hidden sm:inline">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-amber-100 text-amber-700 font-bold px-3 py-2 rounded-xl border border-amber-200 hidden sm:inline">
                     ✈️ {vacation.from} – {vacation.until}
                   </span>
                   <button onClick={handleVacationEnd}
-                    className="text-xs bg-red-50 hover:bg-red-100 text-red-500 font-bold px-2 py-1.5 rounded-xl border border-red-200 transition-all flex items-center gap-1">
+                    className="text-sm bg-red-50 hover:bg-red-100 text-red-500 font-bold px-3 py-2 rounded-xl border border-red-200 transition-all flex items-center gap-1">
                     ✕ <span className="hidden sm:inline">შვებულება გაუქმება</span>
                   </button>
                 </div>
               ) : (
                 <button onClick={() => { setVacFrom(""); setVacUntil(""); setVacModal(true); }}
-                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1">
+                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1">
                   ✈️ <span className="hidden sm:inline">შვებულება</span>
                 </button>
               )}
               <button onClick={() => { setEditOpen(p=>!p); }}
-                className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all border ${
+                className={`text-sm font-bold px-4 py-2 rounded-xl transition-all border ${
                   editOpen
                     ? "bg-gray-900 text-white border-gray-900"
                     : "bg-white text-gray-700 border-gray-200 hover:border-emerald-400 hover:text-emerald-600"
@@ -1217,7 +1385,7 @@ export default function TutorSchedulePage() {
                 {dirty && !editOpen && <span className="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full ml-1.5"/>}
               </button>
               <button onClick={() => setCreateModal({ date: toDateStr(focusDate), time: "10:00" })}
-                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 shadow-sm">
+                className="text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-md">
                 + <span className="hidden sm:inline">ახალი სლოტი</span>
               </button>
               {dirty && (
@@ -1518,6 +1686,17 @@ export default function TutorSchedulePage() {
           onClose={() => setDetailModal(null)}
           onCancelled={() => fetchViewData(userId, viewMode, focusDate)}
           onRefresh={() => fetchViewData(userId, viewMode, focusDate)}/>
+      )}
+
+      {/* ── Template slot edit/add modal ── */}
+      {templateModal && (
+        <SlotTemplateModal
+          dayKey={templateModal.dayKey}
+          slot={templateModal.slot}
+          time={templateModal.time}
+          onClose={() => setTemplateModal(null)}
+          onSave={handleTemplateSave}
+          onDelete={handleTemplateDelete}/>
       )}
 
       {/* ── Create slot modal ── */}
