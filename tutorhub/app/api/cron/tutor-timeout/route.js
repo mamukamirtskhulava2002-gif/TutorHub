@@ -1,150 +1,134 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase";
+import Stripe from "stripe";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+async function payTutor(admin, bookingId) {
+  try {
+    const { data: booking } = await admin
+      .from("bookings")
+      .select("id, tutor_id, student_id, total_price, stripe_payment_intent")
+      .eq("id", bookingId)
+      .single();
+
+    if (!booking) return;
+
+    await admin.from("bookings").update({ payment_status: "paid" }).eq("id", bookingId);
+
+    const { data: tutorRow } = await admin
+      .from("tutors")
+      .select("stripe_account_id")
+      .eq("id", booking.tutor_id)
+      .single();
+
+    if (tutorRow?.stripe_account_id && booking.stripe_payment_intent) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent);
+        if (pi.latest_charge) {
+          await stripe.transfers.create({
+            amount:             Math.round(booking.total_price * 100),
+            currency:           "gel",
+            destination:        tutorRow.stripe_account_id,
+            source_transaction: pi.latest_charge,
+            metadata:           { bookingId },
+          });
+        }
+      } catch (err) {
+        console.error("Stripe transfer error:", err.message);
+      }
+    }
+
+    try {
+      await admin.from("notifications").insert({
+        user_id: booking.tutor_id,
+        type:    "payment",
+        title:   "💰 გადახდა ჩაირიცხა",
+        body:    `${booking.total_price}₾ — გაკვეთილი ავტომატურად დადასტურდა (48 სთ).`,
+        link:    "/dashboard/tutor/income",
+        is_read: false,
+      });
+    } catch {}
+  } catch (err) {
+    console.error("payTutor error:", err.message);
+  }
+}
+
 export async function POST(request) {
-  // Validate cron secret
   const auth = request.headers.get("authorization");
   if (!auth || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const supabase = createClient();
+    const admin = createAdminClient();
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-    // 48 hours ago
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-    const cutoffDate = fortyEightHoursAgo.toLocaleDateString("en-CA"); // YYYY-MM-DD
-    const cutoffTime = fortyEightHoursAgo.toTimeString().slice(0, 5);   // HH:MM
-
-    // Find confirmed bookings where the lesson ended more than 48h ago
-    // and tutor never marked it complete
-    const { data: bookings, error } = await supabase
+    // Confirmed bookings whose lesson started 48h+ ago (tutor never pressed "complete")
+    const { data: bookings, error } = await admin
       .from("bookings")
-      .select("id, student_id, tutor_id, total_price, date, time_slot")
+      .select("id, student_id, tutor_id, total_price, date, time_slot, duration_hours")
       .eq("status", "confirmed");
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!bookings?.length) return NextResponse.json({ processed: 0 });
 
-    if (!bookings || bookings.length === 0) {
-      return NextResponse.json({ processed: 0 });
-    }
-
-    // Filter to bookings where lesson was > 48h ago
-    const timedOutBookings = bookings.filter((b) => {
+    const timedOut = bookings.filter(b => {
       if (!b.date || !b.time_slot) return false;
-      const lessonDateTime = new Date(`${b.date}T${b.time_slot}`);
-      return lessonDateTime < fortyEightHoursAgo;
+      const lessonStart = new Date(`${b.date}T${b.time_slot}`);
+      const lessonEnd   = new Date(lessonStart.getTime() + (b.duration_hours || 1) * 3600000);
+      return lessonEnd < cutoff;
     });
 
-    if (timedOutBookings.length === 0) {
-      return NextResponse.json({ processed: 0 });
-    }
+    if (!timedOut.length) return NextResponse.json({ processed: 0 });
 
-    // Get admin profile for admin notifications
-    const { data: adminProfiles } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("role", "admin")
-      .limit(5);
+    // Filter out bookings that have an open dispute — admin handles those
+    const timedOutIds = timedOut.map(b => b.id);
+    const { data: openDisputes } = await admin
+      .from("disputes")
+      .select("booking_id")
+      .in("booking_id", timedOutIds)
+      .eq("status", "open");
+
+    const disputedIds = new Set((openDisputes || []).map(d => d.booking_id));
 
     let processed = 0;
 
-    for (const booking of timedOutBookings) {
+    for (const booking of timedOut) {
+      if (disputedIds.has(booking.id)) continue; // admin resolves disputed ones
+
       try {
-        // Cancel the booking
-        const { error: updateErr } = await supabase
+        const { error: updateErr } = await admin
           .from("bookings")
           .update({
-            status: "cancelled",
-            cancellation_reason: "tutor_timeout",
+            status:               "done",
+            auto_completed_at:    now.toISOString(),
+            student_confirmed_at: now.toISOString(),
           })
           .eq("id", booking.id)
-          .eq("status", "confirmed"); // guard against race condition
+          .eq("status", "confirmed");
 
-        if (updateErr) {
-          console.error(`Failed to cancel booking ${booking.id}:`, updateErr.message);
-          continue;
-        }
+        if (updateErr) { console.error(`auto-complete error ${booking.id}:`, updateErr.message); continue; }
 
-        // Refund to student credit balance
-        if (booking.total_price && booking.student_id) {
-          await supabase
-            .from("profiles")
-            .select("credit_balance")
-            .eq("id", booking.student_id)
-            .single()
-            .then(({ data: profile }) => {
-              const current = profile?.credit_balance ?? 0;
-              return supabase
-                .from("profiles")
-                .update({ credit_balance: current + booking.total_price })
-                .eq("id", booking.student_id);
-            })
-            .catch((err) => console.error("Credit refund error:", err.message));
+        await payTutor(admin, booking.id);
 
-          // Insert credit transaction record
-          await supabase
-            .from("credit_transactions")
-            .insert({
-              user_id: booking.student_id,
-              amount: booking.total_price,
-              reason: "refund_tutor_timeout",
-              booking_id: booking.id,
-            })
-            .catch((err) => console.error("Credit transaction error:", err.message));
-        }
-
-        // Notify student
-        await supabase
-          .from("notifications")
-          .insert({
+        try {
+          await admin.from("notifications").insert({
             user_id: booking.student_id,
-            type: "booking",
-            title: "გაკვეთილი გაუქმდა",
-            body: "მასწავლებელმა გაკვეთილი ვერ დაადასტურა — თანხა დაბრუნდა კრედიტებში",
-            link: "/dashboard/student/lessons",
+            type:    "booking",
+            title:   "გაკვეთილი ჩათვლილია ჩატარებულად ✅",
+            body:    "გაკვეთილი ავტომატურად დადასტურდა — მასწავლებელმა 48 სთ-ში ვერ მოახდინა დადასტურება, თანხა გადაიცა.",
+            link:    "/dashboard/student/lessons",
             is_read: false,
-          })
-          .catch((err) => console.error("Student notification error:", err.message));
-
-        // Notify tutor
-        if (booking.tutor_id) {
-          await supabase
-            .from("notifications")
-            .insert({
-              user_id: booking.tutor_id,
-              type: "booking",
-              title: "ჯავშანი გაუქმდა ⚠️",
-              body: "გაკვეთილი ავტომატურად გაუქმდა — 48 საათში ვერ მოახდინეთ დადასტურება",
-              link: "/dashboard/tutor/bookings",
-              is_read: false,
-            })
-            .catch((err) => console.error("Tutor notification error:", err.message));
-        }
-
-        // Notify admins
-        if (adminProfiles && adminProfiles.length > 0) {
-          const adminNotifications = adminProfiles.map((admin) => ({
-            user_id: admin.id,
-            type: "admin",
-            title: "⚠️ ავტო-გაუქმება",
-            body: `⚠️ გაკვეთილი ავტომატურად გაუქმდა (მასწ. არ დაადასტ.) — ჯავშ. #${booking.id.slice(0, 8)}`,
-            link: "/dashboard/admin/bookings",
-            is_read: false,
-          }));
-          await supabase
-            .from("notifications")
-            .insert(adminNotifications)
-            .catch((err) => console.error("Admin notification error:", err.message));
-        }
+          });
+        } catch {}
 
         processed++;
       } catch (err) {
-        console.error(`Error processing tutor-timeout for booking ${booking.id}:`, err.message);
+        console.error(`tutor-timeout booking ${booking.id}:`, err.message);
       }
     }
 

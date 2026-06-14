@@ -124,17 +124,16 @@ export async function POST(request, { params }) {
     }
 
     // Notify tutor
-    await supabase
-      .from("notifications")
-      .insert({
+    try {
+      await supabase.from("notifications").insert({
         user_id: booking.tutor_id,
-        type: "booking",
-        title: "გაკვეთილი დადასტურდა ✅",
-        body: "სტუდენტმა გაკვეთილი დაადასტურა ✅ გადახდა დამუშავდება",
-        link: "/dashboard/tutor/income",
+        type:    "booking",
+        title:   "გაკვეთილი დადასტურდა ✅",
+        body:    "სტუდენტმა გაკვეთილი დაადასტურა — გადახდა დამუშავდება.",
+        link:    "/dashboard/tutor/income",
         is_read: false,
-      })
-      .catch((err) => console.error("Tutor notification error:", err.message));
+      });
+    } catch {}
 
     // Process payment (fire-and-forget)
     processPaymentToTutor(supabase, bookingId).catch((err) =>

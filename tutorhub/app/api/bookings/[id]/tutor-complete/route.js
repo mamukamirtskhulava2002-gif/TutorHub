@@ -60,27 +60,28 @@ export async function POST(request, { params }) {
     }
 
     // Notify student
-    await supabase
-      .from("notifications")
-      .insert({
+    try {
+      await supabase.from("notifications").insert({
         user_id: booking.student_id,
-        type: "booking",
-        title: "გაკვეთილი დასრულდა ✓",
-        body: "მასწავლებელმა გაკვეთილი დასრულებულად მონიშნა ✓  — 24 საათი გაქვს დასადასტ.",
-        link: "/dashboard/student/lessons",
+        type:    "booking",
+        title:   "გაკვეთილი დასრულდა ✓",
+        body:    "მასწავლებელმა გაკვეთილი დასრულებულად მონიშნა — 24 საათი გაქვს დასადასტურებლად.",
+        link:    "/dashboard/student/lessons",
         is_read: false,
-      })
-      .catch((err) => console.error("Notification error:", err.message));
+      });
+    } catch {}
 
     // Save lesson session record (visible to admin for 24h)
-    await supabase.from("lesson_recordings").upsert(
-      {
-        booking_id: bookingId,
-        recording_url: `https://meet.jit.si/TutorHub-Room-${bookingId}`,
-        expires_at: expiresAt,
-      },
-      { onConflict: "booking_id" }
-    ).catch(() => {});
+    try {
+      await supabase.from("lesson_recordings").upsert(
+        {
+          booking_id:    bookingId,
+          recording_url: `https://meet.jit.si/TutorHub-Room-${bookingId}`,
+          expires_at:    expiresAt,
+        },
+        { onConflict: "booking_id" }
+      );
+    } catch {}
 
     return NextResponse.json({ success: true, token: completionToken });
   } catch (err) {
