@@ -72,8 +72,8 @@ export async function POST(request) {
     // If lesson is soon (< 24h away), tutor must confirm before lesson starts;
     // otherwise tutor has 24h from booking time to confirm.
     const lessonAt  = new Date(`${date}T${timeSlot}`);
-    const in24h     = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const expiresAt = lessonAt > in24h ? in24h.toISOString() : lessonAt.toISOString();
+    const in48h     = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const expiresAt = lessonAt > in48h ? in48h.toISOString() : lessonAt.toISOString();
 
     const { data, error } = await supabase
       .from("bookings")
