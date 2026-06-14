@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request, { params }) {
   try {
     const supabase = await createSupabaseServer();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return NextResponse.json({ error: "არ ხარ შესული" }, { status: 401 });
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session?.user) return NextResponse.json({ error: "არ ხარ შესული" }, { status: 401 });
+    const user = session.user;
 
     const { id: bookingId } = await params;
     const body = await request.json().catch(() => ({}));

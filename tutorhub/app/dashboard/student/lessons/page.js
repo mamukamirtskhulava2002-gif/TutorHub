@@ -123,6 +123,7 @@ function LessonsContent() {
 
   const [cancelModal, setCancelModal] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [cancelError, setCancelError] = useState("");
 
   const [reportedReplies, setReportedReplies] = useState(new Set());
 
@@ -286,22 +287,27 @@ function LessonsContent() {
 
   async function cancelLesson(lesson) {
     setCancellingId(lesson.id);
-    const res = await fetch(`/api/bookings/${lesson.id}/cancel`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok) {
-      setAlert({ type: "error", msg: data.error || "გაუქმება ვერ მოხერხდა" });
-    } else {
-      setLessons(prev => prev.filter(l => l.id !== lesson.id));
-      fetchCompletedCount(studentId);
-      fetchStats(studentId);
-      fetchNextLesson(studentId);
-      if (data.credit_refunded) {
-        setAlert({ type: "success", msg: `გაუქმდა — ${data.credit_refunded} ₾ კრედიტი დაბრუნდა` });
+    setCancelError("");
+    try {
+      const res = await fetch(`/api/bookings/${lesson.id}/cancel`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCancelError(data.error || "გაუქმება ვერ მოხერხდა. სცადეთ ხელახლა.");
+      } else {
+        setLessons(prev => prev.filter(l => l.id !== lesson.id));
+        fetchCompletedCount(studentId);
+        fetchStats(studentId);
+        fetchNextLesson(studentId);
+        setCancelModal(null);
+        if (data.credit_refunded) {
+          setAlert({ type: "success", msg: `გაუქმდა — ${data.credit_refunded} ₾ კრედიტი დაბრუნდა` });
+          setTimeout(() => setAlert(null), 4000);
+        }
       }
+    } catch {
+      setCancelError("კავშირის შეცდომა. სცადეთ ხელახლა.");
     }
     setCancellingId(null);
-    setCancelModal(null);
-    setTimeout(() => setAlert(null), 4000);
   }
 
   async function reportTutorReply(bookingId) {
@@ -683,22 +689,27 @@ function LessonsContent() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
             <p className="text-lg font-black text-gray-900 mb-1">ჯავშნის გაუქმება</p>
-            <p className="text-sm text-gray-500 mb-5">
+            <p className="text-sm text-gray-500 mb-4">
               ნამდვილად გინდა გააუქმო{" "}
               <span className="font-semibold text-gray-800">
                 {getBookingSubject(cancelModal.note, cancelModal.tutors?.subject)}
               </span>{" "}
               — <span className="font-semibold">{cancelModal.tutors?.profiles?.full_name}</span>-თან?
             </p>
+            {cancelError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-xl mb-4">
+                ❌ {cancelError}
+              </div>
+            )}
             <div className="flex gap-2">
-              <button onClick={() => setCancelModal(null)} className="flex-1 btn-secondary py-2.5">
+              <button onClick={() => { setCancelModal(null); setCancelError(""); }} className="flex-1 btn-secondary py-2.5">
                 არა
               </button>
               <button
                 onClick={() => cancelLesson(cancelModal)}
                 disabled={cancellingId === cancelModal.id}
                 className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50">
-                {cancellingId === cancelModal.id ? "..." : "კი, გავაუქმო"}
+                {cancellingId === cancelModal.id ? "..." : cancelError ? "ხელახლა ცდა" : "კი, გავაუქმო"}
               </button>
             </div>
           </div>
