@@ -132,7 +132,7 @@ function PriceRangeSlider({ min, max, value, onChange }) {
 // ─────────────────────────────────────
 // Quick Slot Strip — next 7 days
 // ─────────────────────────────────────
-function QuickSlotStrip({ tutor }) {
+function QuickSlotStrip({ tutor, displaySubject }) {
   const days = getNextDays(7);
   const [activeDayIdx, setActiveDayIdx] = useState(() => {
     const first = days.findIndex(d => (tutor.schedule?.[d.key] || []).length > 0);
@@ -180,7 +180,7 @@ function QuickSlotStrip({ tutor }) {
           <>
             {shown.map(time => (
               <Link key={time}
-                href={`/booking/${tutor.id}?date=${activeDay.dateStr}&time=${encodeURIComponent(time)}`}
+                href={`/booking/${tutor.id}?date=${activeDay.dateStr}&time=${encodeURIComponent(time)}${displaySubject ? `&subject=${encodeURIComponent(displaySubject)}` : ""}`}
                 className="text-xs px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all">
                 {time}
               </Link>
@@ -201,7 +201,7 @@ function QuickSlotStrip({ tutor }) {
 // ─────────────────────────────────────
 // Tutor List Card
 // ─────────────────────────────────────
-function TutorListCard({ tutor, index }) {
+function TutorListCard({ tutor, index, displaySubject }) {
   const name       = tutor.profiles?.full_name || "—";
   const color      = COLORS[index % COLORS.length];
   const isFreeTrial = tutor.trial_price === 0;
@@ -294,14 +294,12 @@ function TutorListCard({ tutor, index }) {
 
           {/* Tags */}
           <div className="flex gap-1.5 flex-wrap mt-2">
-            {(tutor.subject || []).slice(0, 3).map(s => (
-              <span key={s} className="badge-green text-xs">{s}</span>
-            ))}
-            {(tutor.subject || []).length > 3 && (
-              <span className="text-xs text-gray-400 px-2 py-0.5 rounded-full border border-gray-200">
-                +{tutor.subject.length - 3}
-              </span>
+            {displaySubject && (
+              <span className="text-xs bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-bold">📚 {displaySubject}</span>
             )}
+            {(tutor.subject || []).filter(s => s !== displaySubject).slice(0, 2).map(s => (
+              <span key={s} className="badge-green text-xs opacity-60">{s}</span>
+            ))}
             {tutor.is_online  && <span className="badge-blue text-xs">🌐 ონლაინ</span>}
             {tutor.is_offline && <span className="badge-amber text-xs">🏫 პირისპირ</span>}
             {hasGroup         && <span className="text-xs bg-purple-50 text-purple-600 border border-purple-200 px-2 py-0.5 rounded-full">👥 ჯგუფური</span>}
@@ -314,7 +312,7 @@ function TutorListCard({ tutor, index }) {
               className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-emerald-300 hover:text-emerald-600 transition-all font-medium">
               პროფილი
             </Link>
-            <Link href={`/booking/${tutor.id}`}
+            <Link href={`/booking/${tutor.id}${displaySubject ? `?subject=${encodeURIComponent(displaySubject)}` : ""}`}
               className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-all">
               განრიგი / დაჯავშნა →
             </Link>
@@ -323,7 +321,7 @@ function TutorListCard({ tutor, index }) {
       </div>
 
       {/* Quick slot strip */}
-      <QuickSlotStrip tutor={tutor} />
+      <QuickSlotStrip tutor={tutor} displaySubject={displaySubject} />
     </div>
   );
 }
@@ -547,21 +545,23 @@ function FiltersPanel({ filters, setF, geoLoading, handleNearMe, filtered, toggl
           <TutorMap
             height="200px"
             focusRegion={filters.region || null}
-            tutors={filtered.map(t => {
-              const coords = getTutorCoords(t);
-              return {
-                id:             t.id,
-                name:           t.profiles?.full_name || "მასწავლებელი",
-                subject:        t.subject || [],
-                price_per_hour: t.price_per_hour,
-                rating:         t.rating,
-                is_verified:    t.is_verified,
-                city:           t.city,
-                avatar_url:     t.profiles?.avatar_url || null,
-                lat:            t.exact_lat  ?? coords?.lat  ?? null,
-                lng:            t.exact_lng  ?? coords?.lng  ?? null,
-              };
-            })}
+            tutors={filtered
+              .filter((t, idx, arr) => arr.findIndex(x => x.id === t.id) === idx)
+              .map(t => {
+                const coords = getTutorCoords(t);
+                return {
+                  id:             t.id,
+                  name:           t.profiles?.full_name || "მასწავლებელი",
+                  subject:        t.subject || [],
+                  price_per_hour: t.price_per_hour,
+                  rating:         t.rating,
+                  is_verified:    t.is_verified,
+                  city:           t.city,
+                  avatar_url:     t.profiles?.avatar_url || null,
+                  lat:            t.exact_lat  ?? coords?.lat  ?? null,
+                  lng:            t.exact_lng  ?? coords?.lng  ?? null,
+                };
+              })}
           />
         </div>
       </div>
@@ -825,15 +825,21 @@ function SearchContent() {
     );
   }
 
-  const filtered = tutors
+  const allExpanded = tutors.flatMap(t => {
+    const subj = t.subject || [];
+    if (subj.length <= 1) return [{ ...t, _displaySubject: subj[0] ?? null }];
+    return subj.map(s => ({ ...t, _displaySubject: s }));
+  });
+
+  const filtered = allExpanded
     .filter(t => {
       if (!search) return true;
       const q = search.toLowerCase();
       return (t.profiles?.full_name || "").toLowerCase().includes(q) ||
-             (t.subject || []).join(" ").toLowerCase().includes(q) ||
+             (t._displaySubject || "").toLowerCase().includes(q) ||
              (t.bio || "").toLowerCase().includes(q);
     })
-    .filter(t => !filters.subject || (t.subject || []).includes(filters.subject))
+    .filter(t => !filters.subject || t._displaySubject === filters.subject)
     .filter(t => { const { ind } = getSchedulePrices(t.schedule); if (!ind) return true; return ind >= filters.priceRange[0] && ind <= filters.priceRange[1]; })
     .filter(t => (t.rating || 0) >= filters.minRating)
     .filter(t => !filters.online  || t.is_online)
@@ -1039,28 +1045,30 @@ function SearchContent() {
             <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
               <TutorMap
                 height="600px"
-                tutors={filtered.map(t => {
-                  const coords = getTutorCoords(t);
-                  return {
-                    id:            t.id,
-                    name:          t.profiles?.full_name || "მასწავლებელი",
-                    subject:       t.subject || [],
-                    price_per_hour: t.price_per_hour,
-                    rating:        t.rating,
-                    review_count:  t.review_count,
-                    is_verified:   t.is_verified,
-                    city:          t.city,
-                    avatar_url:    t.profiles?.avatar_url || null,
-                    lat:           t.exact_lat  ?? coords?.lat  ?? null,
-                    lng:           t.exact_lng  ?? coords?.lng  ?? null,
-                  };
-                })}
+                tutors={filtered
+                  .filter((t, idx, arr) => arr.findIndex(x => x.id === t.id) === idx)
+                  .map(t => {
+                    const coords = getTutorCoords(t);
+                    return {
+                      id:            t.id,
+                      name:          t.profiles?.full_name || "მასწავლებელი",
+                      subject:       t.subject || [],
+                      price_per_hour: t.price_per_hour,
+                      rating:        t.rating,
+                      review_count:  t.review_count,
+                      is_verified:   t.is_verified,
+                      city:          t.city,
+                      avatar_url:    t.profiles?.avatar_url || null,
+                      lat:           t.exact_lat  ?? coords?.lat  ?? null,
+                      lng:           t.exact_lng  ?? coords?.lng  ?? null,
+                    };
+                  })}
               />
             </div>
           ) : (
             <div className="space-y-4">
               {filtered.map((t, i) => (
-                <TutorListCard key={t.id} tutor={t} index={i} />
+                <TutorListCard key={`${t.id}-${t._displaySubject || ""}`} tutor={t} index={i} displaySubject={t._displaySubject} />
               ))}
             </div>
           )}
