@@ -186,7 +186,7 @@ function QuickSlotStrip({ tutor, displaySubject }) {
               </Link>
             ))}
             {extra > 0 && (
-              <Link href={`/booking/${tutor.id}`}
+              <Link href={`/booking/${tutor.id}${displaySubject ? `?subject=${encodeURIComponent(displaySubject)}` : ""}`}
                 className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-400 hover:text-emerald-600 hover:border-emerald-300 transition-all">
                 +{extra} →
               </Link>

@@ -364,6 +364,12 @@ function TimeSelector({ tutor, date, existingBookings, selected, onSelect, onSlo
   );
 }
 
+function buildNote(subject, text) {
+  const n = (text || "").trim();
+  if (!subject) return n || null;
+  return `[S:${subject}]${n ? " " + n : ""}`;
+}
+
 // ──────────────────────────────────────────────
 function BookingContent() {
   const { id }        = useParams();
@@ -385,6 +391,7 @@ function BookingContent() {
 
   const [existingBookings, setExistingBookings] = useState([]);
 
+  const [selectedSubject, setSelectedSubject] = useState(searchParams.get("subject") || "");
   const [isEditing, setIsEditing]       = useState(false);
   const [bookingType, setBookingType]   = useState("single");
   const [format, setFormat]             = useState("online");
@@ -440,6 +447,13 @@ function BookingContent() {
 
       if (!tutorData) { router.push("/search"); return; }
       setTutor(tutorData);
+      const subjectFromUrl = searchParams.get("subject");
+      const subjects = tutorData?.subject || [];
+      if (subjectFromUrl && subjects.includes(subjectFromUrl)) {
+        setSelectedSubject(subjectFromUrl);
+      } else {
+        setSelectedSubject(subjects[0] || "");
+      }
       if (tutorData.is_online) setFormat("online");
       else if (tutorData.is_offline) setFormat("offline");
 
@@ -458,7 +472,9 @@ function BookingContent() {
         if (existing) {
           setBookingType(existing.booking_type || "single");
           setFormat(existing.format || "online");
-          setNote(existing.note || "");
+          const existSubj = existing.note?.match(/^\[S:([^\]]+)\]/)?.[1];
+          if (existSubj) setSelectedSubject(existSubj);
+          setNote(existing.note ? existing.note.replace(/^\[S:[^\]]+\]\s*/, "") : "");
           setDuration(existing.duration_hours || 1);
           if (existing.date) setSelectedDate(new Date(existing.date + "T00:00:00"));
           setSelectedTime(existing.time_slot || "");
@@ -513,7 +529,7 @@ function BookingContent() {
     };
   }, [selectedDate, id]);
 
-  const maxDaysPerWeek = tutor?.max_sessions_per_week || 2;
+  const maxDaysPerWeek = tutor?.max_sessions_per_week || 3;
 
   // Derive effective hourly rate from schedule slots (falls back to profile price_per_hour)
   const scheduleMinPrice = (() => {
@@ -618,7 +634,7 @@ function BookingContent() {
             duration_hours: duration,
             format,
             total_price:    selectedSlot?.price > 0 ? selectedSlot.price : scheduleMinPrice * duration,
-            note:           note.trim() || null,
+            note:           buildNote(selectedSubject, note),
           })
           .eq("id", editBookingId);
 
@@ -681,7 +697,7 @@ function BookingContent() {
           duration_hours: trialDurH,
           format,
           total_price:    tutor?.trial_price || 0,
-          note:           note.trim() || null,
+          note:           buildNote(selectedSubject, note),
           status:         "pending",
           booking_type:   "trial",
         });
@@ -733,7 +749,7 @@ function BookingContent() {
             duration_hours: slotDur,
             format,
             total_price:    slotPrc,
-            note:           note.trim() || null,
+            note:           buildNote(selectedSubject, note),
             status:         "pending",
             booking_type:   "single",
           });
@@ -820,6 +836,7 @@ else if (bookingType === "package") {
         duration_hours: 1,
         format,
         total_price:    0,
+        note:           buildNote(selectedSubject, note),
         status:         "pending",
         booking_type:   "package",
         package_id:     pkg.id,
@@ -862,7 +879,7 @@ else if (bookingType === "package") {
           duration_hours: duration,
           format,
           total_price:    scheduleMinPrice * duration,
-          note:           note.trim() || null,
+          note:           buildNote(selectedSubject, note),
           status:         "pending",
           booking_type:   "recurring",
           repeat_weekly:  repeatAll,
@@ -969,7 +986,7 @@ else if (bookingType === "package") {
             </div>
             <div className="flex-1">
               <h2 className="font-bold text-gray-900">{tutor?.profiles?.full_name}</h2>
-              <p className="text-sm text-gray-400">{tutor?.subject?.slice(0,2).join(", ")} · ⭐ {tutor?.rating}</p>
+              <p className="text-sm text-gray-400">{selectedSubject || (tutor?.subject || []).join(", ")} · ⭐ {tutor?.rating}</p>
               {scheduleMinPrice > 0 && (
                 <p className="text-sm font-black text-emerald-600 mt-0.5">
                   {selectedSlot?.price > 0 ? selectedSlot.price : scheduleMinPrice} ₾/სთ
@@ -977,6 +994,29 @@ else if (bookingType === "package") {
               )}
             </div>
           </div>
+
+          {(tutor?.subject || []).length > 1 && !isEditing && (
+            <div className="card p-5">
+              <h3 className="font-bold text-gray-900 mb-3">📚 რომელ საგანში გინდა გაკვეთილი?</h3>
+              <div className="flex flex-col gap-2">
+                {(tutor.subject || []).map(s => (
+                  <button key={s} onClick={() => setSelectedSubject(s)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                      selectedSubject === s
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-gray-200 hover:border-emerald-300"
+                    }`}>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      selectedSubject === s ? "border-emerald-600 bg-emerald-600" : "border-gray-300"
+                    }`}>
+                      {selectedSubject === s && <span className="w-2 h-2 bg-white rounded-full block" />}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-800">{s}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {userRole === "parent" && children.length > 0 && (
             <div className="card p-5">
@@ -1236,8 +1276,8 @@ else if (bookingType === "package") {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900 mb-3">კვირაში გაკვეთილები</h3>
-                <div className="flex gap-2">
-                  {[2, maxDaysPerWeek===3?3:null].filter(Boolean).map(n => (
+                <div className="flex gap-2 flex-wrap">
+                  {Array.from({ length: maxDaysPerWeek - 1 }, (_, i) => i + 2).map(n => (
                     <button key={n} onClick={() => { setPkgDaysPerWeek(n); setPkgDaySlots([]); }}
                       className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                         pkgDaysPerWeek===n ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-600 hover:border-emerald-300"

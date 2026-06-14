@@ -35,6 +35,16 @@ function hoursAgo(isoStr) {
   return Math.floor((Date.now() - new Date(isoStr)) / 3600000);
 }
 
+function getBookingSubject(note, tutorSubjects) {
+  if (note) { const m = note.match(/^\[S:([^\]]+)\]/); if (m) return m[1]; }
+  return Array.isArray(tutorSubjects) ? tutorSubjects[0] : tutorSubjects;
+}
+
+function getDisplayNote(note) {
+  if (!note) return "";
+  return note.replace(/^\[S:[^\]]+\]\s*/, "");
+}
+
 function bookingTypeInfo(b) {
   if (b.booking_type === "trial")
     return { label: "🎓 საცდელი",  cls: "bg-purple-50 text-purple-700 border-purple-100" };
@@ -54,11 +64,11 @@ const STATUS_MAP = {
 };
 
 const TABS = [
-  { key: "upcoming",           label: "მომავალი" },
-  { key: "waiting_confirm",    label: "ელოდება" },
-  { key: "completed_by_tutor", label: "სტ. ადასტ." },
-  { key: "past",               label: "დასრულ." },
-  { key: "cancelled",          label: "გაუქმებ." },
+  { key: "upcoming",           label: "დაგეგმილი",          tooltip: "დადასტურებული მომავალი გაკვეთილები." },
+  { key: "waiting_confirm",    label: "დასადასტურებელი",    tooltip: "ახალი ჯავშნები, რომლებიც თქვენს დადასტურებას ელოდება." },
+  { key: "completed_by_tutor", label: "მოსწ. დაადასტ.",     tooltip: "თქვენ დასრულებულად მონიშნეთ — მოსწავლეს 24 სთ აქვს დასადასტურებლად." },
+  { key: "past",               label: "დასრულებული",        tooltip: "სრულად დასრულებული გაკვეთილები, ანაზღაურება ჩარიცხულია." },
+  { key: "cancelled",          label: "გაუქმებული",         tooltip: "გაუქმებული ან გასაჩივრებული ჯავშნები." },
 ];
 
 // ─── ConfirmModal ─────────────────────────────────────────────────────────
@@ -178,7 +188,7 @@ export default function TutorBookingsPage() {
               series_id:   b.series_id,
               student_id:  b.student_id,
               studentName: b.profiles?.full_name || "სტუდენტი",
-              subject:     Array.isArray(b.tutors?.subject) ? b.tutors.subject[0] : b.tutors?.subject,
+              subject:     getBookingSubject(b.note, b.tutors?.subject),
               format:      b.format,
               bookings:    [],
             };
@@ -486,19 +496,33 @@ export default function TutorBookingsPage() {
           {/* Tabs */}
           <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
             {TABS.map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`relative px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  tab === t.key
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}>
-                {t.label}
-                {t.key === "waiting_confirm" && pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                    {pendingCount}
+              <div key={t.key} className="relative flex items-center">
+                <button onClick={() => setTab(t.key)}
+                  className={`relative px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                    tab === t.key
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}>
+                  {t.label}
+                  {t.key === "waiting_confirm" && pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+                {/* ? tooltip */}
+                <div className="relative group/tip ml-0.5 flex-shrink-0">
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-[9px] font-bold text-gray-400 hover:text-emerald-600 rounded-full hover:bg-white cursor-default transition-colors select-none">
+                    ?
                   </span>
-                )}
-              </button>
+                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 w-52">
+                    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-xl shadow-lg text-center leading-relaxed">
+                      {t.tooltip}
+                    </div>
+                    <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900 mx-auto" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -634,7 +658,7 @@ export default function TutorBookingsPage() {
                 const elapsed       = hoursAgo(b.completed_by_tutor_at);
                 const autoIn        = Math.max(0, 24 - elapsed);
                 const countdown     = countdownText(b.date, b.time_slot);
-                const subject       = Array.isArray(b.tutors?.subject) ? b.tutors.subject[0] : b.tutors?.subject;
+                const subject       = getBookingSubject(b.note, b.tutors?.subject);
                 const noteExpanded  = expandedNote[b.id];
                 const loading_      = !!actionLoading && actionLoading.startsWith(b.id);
 
@@ -701,14 +725,14 @@ export default function TutorBookingsPage() {
                           <p className="text-xs text-gray-400 mt-1">{fmtDate(b.date, b.time_slot)}</p>
 
                           {/* Note */}
-                          {b.note && (
+                          {getDisplayNote(b.note) && (
                             <div className="mt-2">
                               <p className={`text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-100 ${
                                 !noteExpanded ? "line-clamp-1" : ""
                               }`}>
-                                💬 {b.note}
+                                💬 {getDisplayNote(b.note)}
                               </p>
-                              {b.note.length > 60 && (
+                              {getDisplayNote(b.note).length > 60 && (
                                 <button
                                   onClick={() => setExpandedNote(p => ({ ...p, [b.id]: !p[b.id] }))}
                                   className="text-xs text-emerald-600 hover:underline ml-1 mt-0.5">
