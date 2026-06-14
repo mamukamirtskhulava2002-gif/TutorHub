@@ -72,7 +72,7 @@ const TABS = [
 ];
 
 // ─── ConfirmModal ─────────────────────────────────────────────────────────
-function ConfirmModal({ open, title, body, confirmLabel = "დადასტ.", danger = false, onConfirm, onCancel, children }) {
+function ConfirmModal({ open, title, body, confirmLabel = "დადასტ.", cancelLabel = "არა", danger = false, onConfirm, onCancel, children }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
@@ -83,7 +83,7 @@ function ConfirmModal({ open, title, body, confirmLabel = "დადასტ.",
         <div className="flex gap-3 justify-end mt-4">
           <button onClick={onCancel}
             className="btn-secondary text-sm px-4 py-2">
-            გაუქმება
+            {cancelLabel}
           </button>
           <button onClick={onConfirm}
             className={`text-sm px-4 py-2 rounded-xl font-semibold transition-all active:scale-95 ${
