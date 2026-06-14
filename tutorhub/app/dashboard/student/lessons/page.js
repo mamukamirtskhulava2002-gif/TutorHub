@@ -8,6 +8,11 @@ import { createClient } from "@/lib/supabase";
 import { containsProfanity } from "@/lib/reviewUtils";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
+function getBookingSubject(note, tutorSubjects) {
+  if (note) { const m = note.match(/^\[S:([^\]]+)\]/); if (m) return m[1]; }
+  return Array.isArray(tutorSubjects) ? tutorSubjects[0] : tutorSubjects;
+}
+
 function canCancel(lesson) {
   if (lesson.status === "pending") return true;
   if (!lesson.date || !lesson.time_slot) return false;
@@ -176,7 +181,7 @@ function LessonsContent() {
     const supabase = createClient();
     const today = new Date().toISOString().split("T")[0];
     const { data } = await supabase.from("bookings")
-      .select("id, date, time_slot, status, tutor_id, tutors(subject, profiles(full_name))")
+      .select("id, date, time_slot, status, tutor_id, note, tutors(subject, profiles(full_name))")
       .eq("student_id", uid).eq("status", "confirmed")
       .gte("date", today)
       .order("date", { ascending: true })
@@ -379,9 +384,7 @@ function LessonsContent() {
           {/* ─── Next lesson banner ─── */}
           {nextLesson && (() => {
             const rel = relativeTime(nextLesson.date, nextLesson.time_slot, now);
-            const subj = Array.isArray(nextLesson.tutors?.subject)
-              ? nextLesson.tutors.subject[0]
-              : nextLesson.tutors?.subject;
+            const subj = getBookingSubject(nextLesson.note, nextLesson.tutors?.subject);
             const isImminent = rel?.includes("წუთში") || rel?.includes("საათ");
             return (
               <div className={`rounded-2xl p-4 mb-5 flex items-center justify-between gap-3 shadow-md ${
@@ -457,9 +460,7 @@ function LessonsContent() {
             <div className="space-y-3">
               {lessons.map(lesson => {
                 const tutorName = lesson.tutors?.profiles?.full_name || "მასწავლებელი";
-                const subject   = Array.isArray(lesson.tutors?.subject)
-                  ? lesson.tutors.subject[0]
-                  : lesson.tutors?.subject;
+                const subject   = getBookingSubject(lesson.note, lesson.tutors?.subject);
                 const isPending   = lesson.status === "pending";
                 const isConfirmed = lesson.status === "confirmed";
                 const isCompleted = lesson.status === "completed_by_tutor";
@@ -685,9 +686,7 @@ function LessonsContent() {
             <p className="text-sm text-gray-500 mb-5">
               ნამდვილად გინდა გააუქმო{" "}
               <span className="font-semibold text-gray-800">
-                {Array.isArray(cancelModal.tutors?.subject)
-                  ? cancelModal.tutors.subject[0]
-                  : cancelModal.tutors?.subject}
+                {getBookingSubject(cancelModal.note, cancelModal.tutors?.subject)}
               </span>{" "}
               — <span className="font-semibold">{cancelModal.tutors?.profiles?.full_name}</span>-თან?
             </p>
