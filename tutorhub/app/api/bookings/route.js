@@ -68,18 +68,26 @@ export async function POST(request) {
       );
     }
 
+    // expires_at = max(lesson start time, now + 24h)
+    // If lesson is soon (< 24h away), tutor must confirm before lesson starts;
+    // otherwise tutor has 24h from booking time to confirm.
+    const lessonAt  = new Date(`${date}T${timeSlot}`);
+    const in24h     = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const expiresAt = lessonAt > in24h ? in24h.toISOString() : lessonAt.toISOString();
+
     const { data, error } = await supabase
       .from("bookings")
       .insert({
-        student_id: user.id,
-        tutor_id: tutorId,
+        student_id:     user.id,
+        tutor_id:       tutorId,
         date,
-        time_slot: timeSlot,
+        time_slot:      timeSlot,
         duration_hours: durationHours ?? 1,
         format,
-        total_price: totalPrice,
-        note: note ?? null,
-        status: "pending",
+        total_price:    totalPrice,
+        note:           note ?? null,
+        status:         "pending",
+        expires_at:     expiresAt,
       })
       .select()
       .single();
