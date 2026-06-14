@@ -291,21 +291,17 @@ export default function TutorBookingsPage() {
       showToast(`პაკეტი (${sg?.bookings.length} გაკვ.) დადასტურდა!`, "success");
 
     } else if (action === "cancel_series") {
-      const { error } = await supabase
-        .from("bookings").update({ status: "cancelled" }).eq("series_id", bookingId);
-      if (error) { showToast("პაკეტის გაუქმება ვერ მოხერხდა"); setActionLoading(null); return; }
-      await supabase.from("booking_series").update({ status: "cancelled" }).eq("id", bookingId);
-      const sg = seriesGroups.find(s => s.series_id === bookingId);
-      if (sg?.student_id) {
-        await supabase.from("notifications").insert({
-          user_id: sg.student_id, type: "booking",
-          title: "პაკეტი გაუქმდა ❌",
-          body: "მასწავლებელმა პაკეტი გააუქმა.",
-          link: "/dashboard/student/lessons", is_read: false,
-        }).then(() => {}).catch(() => {});
-      }
+      const res = await fetch("/api/bookings/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seriesId: bookingId, reason: extra?.reason || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "პაკეტის გაუქმება ვერ მოხერხდა"); setActionLoading(null); return; }
+      const refundInfo  = data.studentRefund  > 0 ? ` · ${data.studentRefund}₾ დაუბრუნდა`  : "";
+      const penaltyInfo = data.tutorPenalty   > 0 ? ` · ${data.tutorPenalty}₾ ჯარიმა`     : "";
       setSeriesGroups(prev => prev.filter(s => s.series_id !== bookingId));
-      showToast("პაკეტი გაუქმდა", "error");
+      showToast(`პაკეტი გაუქმდა${refundInfo}${penaltyInfo}`, "error");
 
     } else if (action === "completed_by_tutor") {
       const res = await fetch(`/api/bookings/${bookingId}/tutor-complete`, { method: "POST" });
