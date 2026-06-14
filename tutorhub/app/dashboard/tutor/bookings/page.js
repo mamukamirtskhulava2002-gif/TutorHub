@@ -435,7 +435,7 @@ export default function TutorBookingsPage() {
                           <br />
                           {price > 0 ? (
                             <>სტუდენტს სრულად დაუბრუნდება <strong>{price}₾</strong>.
-                            {" "}თქვენი საფულიდან გამოაქვთ <strong>{penalty}₾</strong> ჯარიმა (20%).</>
+                            {" "}თქვენი საფულიდან გამოგექვითებათ <strong>{penalty}₾</strong> ჯარიმა (20%).</>
                           ) : "სტუდენტი შეტყობინდება."}
                         </>
                       ) : (
