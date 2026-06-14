@@ -47,10 +47,10 @@ function calcTrustIndex(totalBooked, cancelledByTutor) {
   return Math.round((completed / totalBooked) * 100);
 }
 
-function TrustIndexBadge({ index }) {
+function TrustIndexBadge({ index, inGrace }) {
   if (index === null) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-400">
+      <div className="flex items-center gap-2 text-sm text-gray-400 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
         <span className="text-lg">📊</span>
         <span>სტატისტიკა ჯერ არ არის — გამართეთ პირველი გაკვეთილი</span>
       </div>
@@ -66,51 +66,47 @@ function TrustIndexBadge({ index }) {
     emoji = "⚠️"; label = "საშუალო";
   } else {
     color = "text-red-700"; bg = "bg-red-50"; border = "border-red-200";
-    emoji = "🔴"; label = "დაბლოკვის რისკი";
+    emoji = "🔴"; label = "რეიტინგი მცირდება";
   }
 
   const filled = Math.round(index / 10);
 
   return (
     <div className={`rounded-xl border ${border} ${bg} px-5 py-4`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{emoji}</span>
-          <span className={`text-2xl font-black ${color}`}>{index}%</span>
-          <span className={`text-sm font-semibold ${color}`}>{label}</span>
-        </div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xl">{emoji}</span>
+        <span className={`text-2xl font-black ${color}`}>{index}%</span>
+        <span className={`text-sm font-semibold ${color}`}>{label}</span>
+        {inGrace && (
+          <span className="ml-auto text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">🛡️ ვადა</span>
+        )}
       </div>
 
-      {/* პროგრეს ბარი */}
       <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
         <div
           className={`h-2.5 rounded-full transition-all duration-700 ${
-            index >= 90 ? "bg-emerald-500" :
-            index >= 75 ? "bg-amber-500" :
-            "bg-red-500"
+            index >= 90 ? "bg-emerald-500" : index >= 75 ? "bg-amber-500" : "bg-red-500"
           }`}
           style={{ width: `${index}%` }}
         />
       </div>
 
-      {/* dots ვიზუალიზაცია */}
       <div className="flex gap-1 mb-3">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div
-            key={i}
-            className={`flex-1 h-1.5 rounded-full ${
-              i < filled
-                ? (index >= 90 ? "bg-emerald-400" : index >= 75 ? "bg-amber-400" : "bg-red-400")
-                : "bg-gray-200"
-            }`}
-          />
+          <div key={i} className={`flex-1 h-1.5 rounded-full ${
+            i < filled
+              ? (index >= 90 ? "bg-emerald-400" : index >= 75 ? "bg-amber-400" : "bg-red-400")
+              : "bg-gray-200"
+          }`}/>
         ))}
       </div>
 
       {index < 90 && (
         <p className={`text-xs ${color} font-medium`}>
           {index < 75
-            ? "⛔ 75%-ს ქვემოთ — პროფილი 1 კვირით იყინება ავტომატურად"
+            ? inGrace
+              ? "ვადის პერიოდში ხართ — ჯერ გავლენა არ არის"
+              : "⚠️ 75%-ს ქვემოთ — ძიებაში ვარსკვლავის რეიტინგი მცირდება"
             : "ინდექსის გასაუმჯობესებლად შეამცირეთ გაუქმებული გაკვეთილები"}
         </p>
       )}
@@ -118,9 +114,14 @@ function TrustIndexBadge({ index }) {
   );
 }
 
-function TrustIndexSection({ totalBooked, cancelledByTutor, isFrozen, frozenUntil }) {
+function TrustIndexSection({ totalBooked, cancelledByTutor, isFrozen, frozenUntil, firstLessonAt }) {
   const index = calcTrustIndex(totalBooked, cancelledByTutor);
   const completed = (totalBooked || 0) - (cancelledByTutor || 0);
+
+  const graceEndsAt = firstLessonAt
+    ? new Date(new Date(firstLessonAt).getTime() + 30 * 24 * 60 * 60 * 1000)
+    : null;
+  const inGrace = graceEndsAt ? Date.now() < graceEndsAt.getTime() : false;
 
   return (
     <div className="card p-6">
@@ -131,33 +132,42 @@ function TrustIndexSection({ totalBooked, cancelledByTutor, isFrozen, frozenUnti
         </span>
       </div>
 
-      {/* გაყინვის ბანერი */}
+      {/* ძველი გაყინვის ბანერი (ისტორიული) */}
       {isFrozen && frozenUntil && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-3">
           <span className="text-xl">🔒</span>
           <div>
-            <p className="text-sm font-bold text-red-700">პროფილი დროებით გაყინულია</p>
+            <p className="text-sm font-bold text-red-700">პროფილი დროებით შეჩერებულია</p>
             <p className="text-xs text-red-500 mt-0.5">
-              განახლდება: {new Date(frozenUntil).toLocaleDateString("ka-GE", {
-                day: "numeric", month: "long", year: "numeric"
-              })}
-            </p>
-            <p className="text-xs text-red-400 mt-1">
-              გაუქმებების რაოდენობამ 75%-ის ზღვარს ჩაუვარდა
+              განახლდება: {new Date(frozenUntil).toLocaleDateString("ka-GE", { day: "numeric", month: "long", year: "numeric" })}
             </p>
           </div>
         </div>
       )}
 
-      <TrustIndexBadge index={index} />
+      {/* Grace period ბანერი */}
+      {inGrace && graceEndsAt && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-3">
+          <span className="text-xl">🛡️</span>
+          <div>
+            <p className="text-sm font-bold text-blue-700">1 თვიანი ვადის პერიოდი</p>
+            <p className="text-xs text-blue-500 mt-0.5">
+              დამწყები მასწავლებლებისთვის — ვადა სრულდება{" "}
+              {graceEndsAt.toLocaleDateString("ka-GE", { day: "numeric", month: "long" })}-ს.
+              ამ პერიოდში ინდექსი ვარსკვლავს არ მოქმედებს.
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* სტატისტიკის ბარათები */}
+      <TrustIndexBadge index={index} inGrace={inGrace} />
+
       {totalBooked > 0 && (
         <div className="grid grid-cols-3 gap-3 mt-4">
           {[
-            { label: "სულ ჯავშანი", value: totalBooked, emoji: "📅", color: "text-gray-700" },
-            { label: "შესრულებული", value: completed, emoji: "✅", color: "text-emerald-600" },
-            { label: "გაუქმებული", value: cancelledByTutor, emoji: "❌", color: "text-red-500" },
+            { label: "სულ ჯავშანი",   value: totalBooked,       emoji: "📅", color: "text-gray-700"    },
+            { label: "შესრულებული",   value: completed,          emoji: "✅", color: "text-emerald-600" },
+            { label: "გაუქმებული",    value: cancelledByTutor,   emoji: "❌", color: "text-red-500"     },
           ].map(({ label, value, emoji, color }) => (
             <div key={label} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
               <div className="text-lg mb-1">{emoji}</div>
@@ -168,13 +178,13 @@ function TrustIndexSection({ totalBooked, cancelledByTutor, isFrozen, frozenUnti
         </div>
       )}
 
-      {/* ახსნა */}
       <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 space-y-1">
         <p className="text-xs font-semibold text-blue-700 mb-1">📌 როგორ მუშაობს?</p>
         {[
-          ["≥ 90%", "🏆 შესანიშნავი — ძიებაში პრიორიტეტი"],
-          ["75–89%", "⚠️ საშუალო — ინდექსი ეცემა"],
-          ["< 75%", "⛔ პროფილი 1 კვირით იყინება"],
+          ["≥ 90%",    "🏆 შესანიშნავი — ძიებაში პრიორიტეტი"],
+          ["75–89%",   "⚠️ საშუალო — ინდექსი ეცემა"],
+          ["< 75%",    "⭐ ვარსკვლავის რეიტინგი მცირდება ძიებაში"],
+          ["1 თვე",    "🛡️ პირველი გაკვეთილიდან 1 თვე — ვადის პერიოდი, გავლენა არ არის"],
         ].map(([range, desc]) => (
           <div key={range} className="flex items-center gap-2 text-xs text-blue-600">
             <span className="font-mono font-bold w-14 shrink-0">{range}</span>
@@ -203,6 +213,7 @@ export default function TutorProfilePage() {
     cancelled_by_tutor:   0,
     is_frozen:            false,
     frozen_until:         null,
+    first_lesson_at:      null,
   });
 
   const [form, setForm] = useState({
@@ -219,7 +230,7 @@ export default function TutorProfilePage() {
     trial_enabled: true,
     trial_duration: 30,
     trial_price: 0,
-    max_sessions_per_week: 2,
+    max_sessions_per_week: 3,
     // onboarding fields
     tagline:             "",
     target_levels:       [],
@@ -293,12 +304,27 @@ export default function TutorProfilePage() {
       const name = profile?.full_name || "";
       setTutorName(name.split(" ")[0]);
 
+      // პირველი დასრულებული გაკვეთილი (grace period-ისთვის)
+      const { data: firstDone } = await supabase
+        .from("bookings")
+        .select("date, student_confirmed_at, auto_completed_at")
+        .eq("tutor_id", user.id)
+        .eq("status", "done")
+        .order("date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      const firstLessonAt = firstDone
+        ? (firstDone.student_confirmed_at || firstDone.auto_completed_at || firstDone.date + "T00:00:00Z")
+        : null;
+
       // სანდოობის მონაცემები ცალკე state-ში
       setTrustData({
         total_booked_lessons: tutor?.total_booked_lessons || 0,
         cancelled_by_tutor:   tutor?.cancelled_by_tutor   || 0,
         is_frozen:            tutor?.is_frozen             || false,
         frozen_until:         tutor?.frozen_until          || null,
+        first_lesson_at:      firstLessonAt,
       });
 
       setForm(f => ({
@@ -316,7 +342,7 @@ export default function TutorProfilePage() {
         trial_duration:        tutor?.trial_duration || 30,
         trial_price:           tutor?.trial_price ?? 0,
         trial_enabled:         tutor?.trial_duration != null,
-        max_sessions_per_week: tutor?.max_sessions_per_week || 2,
+        max_sessions_per_week: tutor?.max_sessions_per_week || 3,
         tagline:            tutor?.tagline            || "",
         target_levels:      tutor?.target_levels      || [],
         teaching_languages: tutor?.teaching_languages || [],
@@ -423,7 +449,7 @@ export default function TutorProfilePage() {
         location_rule:         locRule,
         trial_duration:        form.trial_enabled ? (Number(form.trial_duration) || 30) : null,
         trial_price:           form.trial_enabled ? (Number(form.trial_price) || 0) : null,
-        max_sessions_per_week: Number(form.max_sessions_per_week) || 2,
+        max_sessions_per_week: Number(form.max_sessions_per_week) || 3,
         tagline:               form.tagline || null,
         target_levels:         form.target_levels,
         teaching_languages:    form.teaching_languages,
@@ -588,6 +614,7 @@ export default function TutorProfilePage() {
               cancelledByTutor={trustData.cancelled_by_tutor}
               isFrozen={trustData.is_frozen}
               frozenUntil={trustData.frozen_until}
+              firstLessonAt={trustData.first_lesson_at}
             />
 
             {/* ══ პირადი ინფო ══ */}
@@ -814,11 +841,10 @@ export default function TutorProfilePage() {
                     📅 კვირაში გაკვეთილების მაქსიმუმი ერთ სტუდენტს
                   </p>
                   <p className="text-xs text-gray-400 mb-3">
-                    თუ 2-ს აირჩევ — სტუდენტს კვირაში 2-ზე მეტის დაჯავშნა არ შეეძლება.
-                    თუ 3-ს — სტუდენტს 2 ან 3-ის არჩევის საშუალება ექნება.
+                    სტუდენტს შეეძლება კვირაში 2-დან შენ მიერ არჩეულ მაქსიმუმამდე სლოტის დაჯავშნა.
                   </p>
-                  <div className="flex gap-2">
-                    {[2, 3].map(n => (
+                  <div className="flex gap-2 flex-wrap">
+                    {[2, 3, 4, 5].map(n => (
                       <button
                         key={n}
                         type="button"
@@ -830,11 +856,9 @@ export default function TutorProfilePage() {
                         }`}
                       >
                         კვირაში {n}-ჯერ
-                        {n === 3 && (
-                          <span className="block text-xs mt-0.5 opacity-70">
-                            სტუდენტი ირჩევს 2 ან 3
-                          </span>
-                        )}
+                        <span className="block text-xs mt-0.5 opacity-70">
+                          სტუდ. ირჩევს 2–{n}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -1014,9 +1038,7 @@ export default function TutorProfilePage() {
                 </span>
               </div>
               <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                სტუდენტებსა და მშობლებს ეჩვენებათ შენს პროფილზე.
-                მოკლე ვიდეო წარდგენა <strong>3×-ით მეტ სტუდენტს</strong> მოგიყვანს —
-                წარადგინე თავი, მოყვი გამოცდილება.
+                1–2 წუთიანი ვიდეო-წარდგენა საუკეთესო გზაა იმისთვის, რომ თავი დაამახსოვრო მომავალ მოსწავლეებს. მოკლედ მოყევი შენი სწავლების სტილისა და გამოცდილების შესახებ — ეს <strong>3-ჯერ ზრდის</strong> იმის ალბათობას, რომ სწორედ შენ აგირჩევენ.
               </p>
 
               {/* existing video preview */}
