@@ -112,12 +112,14 @@ export async function POST(request) {
         const { data: tutorProfile } = await admin.from("profiles").select("full_name").eq("id", series.tutor_id).single();
         const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
         if (admins?.length) {
-          await admin.from("notifications").insert(admins.map(a => ({
-            user_id: a.id, type: "system",
-            title: "⚠️ მასწავლებელმა გადააჭარბა გაუქმების ლიმიტს",
-            body: `${tutorProfile?.full_name || "მასწ."}-მ ამ თვეში ${newMonthly}-ჯერ გააუქმა (ლიმიტი: ${MONTHLY_LIMIT}).`,
-            is_read: false,
-          }))).catch(() => {});
+          try {
+            await admin.from("notifications").insert(admins.map(a => ({
+              user_id: a.id, type: "system",
+              title: "⚠️ მასწავლებელმა გადააჭარბა გაუქმების ლიმიტს",
+              body: `${tutorProfile?.full_name || "მასწ."}-მ ამ თვეში ${newMonthly}-ჯერ გააუქმა (ლიმიტი: ${MONTHLY_LIMIT}).`,
+              is_read: false,
+            })));
+          } catch {}
         }
       }
 
@@ -127,12 +129,14 @@ export async function POST(request) {
       if (studentRefund > 0) notifBody += ` ${studentRefund}₾ საფულეში ჩაირიცხა.`;
       if (tutorPenalty > 0) notifBody += ` (${tutorPenalty}₾ ჯარიმა დაეკისრა მასწავლებელს)`;
 
-      await admin.from("notifications").insert({
-        user_id: series.student_id, type: "booking",
-        title: "პაკეტი გაუქმდა ❌",
-        body:  notifBody,
-        link:  "/dashboard/student/lessons", is_read: false,
-      }).catch(() => {});
+      try {
+        await admin.from("notifications").insert({
+          user_id: series.student_id, type: "booking",
+          title: "პაკეტი გაუქმდა ❌",
+          body:  notifBody,
+          link:  "/dashboard/student/lessons", is_read: false,
+        });
+      } catch {}
 
       return NextResponse.json({ success: true, studentRefund, tutorPenalty });
     }
@@ -237,21 +241,25 @@ export async function POST(request) {
         const { data: tutorProfile } = await admin.from("profiles").select("full_name").eq("id", booking.tutor_id).single();
         const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
         if (admins?.length) {
-          await admin.from("notifications").insert(admins.map(a => ({
-            user_id: a.id, type: "system",
-            title: "⚠️ მასწავლებელმა გადააჭარბა გაუქმების ლიმიტს",
-            body: `${tutorProfile?.full_name || "მასწ."}-მ ამ თვეში ${newMonthly}-ჯერ გააუქმა გაკვეთილი (ლიმიტი: ${MONTHLY_LIMIT}).`,
-            is_read: false,
-          }))).catch(() => {});
+          try {
+            await admin.from("notifications").insert(admins.map(a => ({
+              user_id: a.id, type: "system",
+              title: "⚠️ მასწავლებელმა გადააჭარბა გაუქმების ლიმიტს",
+              body: `${tutorProfile?.full_name || "მასწ."}-მ ამ თვეში ${newMonthly}-ჯერ გააუქმა გაკვეთილი (ლიმიტი: ${MONTHLY_LIMIT}).`,
+              is_read: false,
+            })));
+          } catch {}
         }
       }
 
       if (warnTutor) {
-        await admin.from("notifications").insert({
-          user_id: booking.tutor_id, type: "system",
-          title: "⚠️ სანდოობის ინდექსი დაეცა",
-          body: `სანდოობის ინდექსი ${trustIndex}%-ზე ჩამოვიდა (ნებ. ≥75%). ეს მოქმედებს ძიებაში ვარსკვლავის რეიტინგზე.`,
-        }).catch(() => {});
+        try {
+          await admin.from("notifications").insert({
+            user_id: booking.tutor_id, type: "system",
+            title: "⚠️ სანდოობის ინდექსი დაეცა",
+            body: `სანდოობის ინდექსი ${trustIndex}%-ზე ჩამოვიდა (ნებ. ≥75%). ეს მოქმედებს ძიებაში ვარსკვლავის რეიტინგზე.`,
+          });
+        } catch {}
       }
     }
 

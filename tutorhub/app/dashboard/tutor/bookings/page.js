@@ -422,7 +422,6 @@ export default function TutorBookingsPage() {
                   const lessonAt  = new Date(`${bk.date}T${bk.time_slot || "00:00"}:00`);
                   const isLate    = (lessonAt - Date.now()) / 3_600_000 < 24;
                   const price     = Number(bk.total_price || 0);
-                  const refund    = isLate ? Math.round(price * 0.5 * 100) / 100 : price;
                   const penalty   = isLate ? Math.round(price * 0.2 * 100) / 100 : 0;
                   return (
                     <div className={`mb-3 rounded-xl px-3 py-2.5 text-xs font-medium border ${
@@ -432,11 +431,11 @@ export default function TutorBookingsPage() {
                     }`}>
                       {isLate ? (
                         <>
-                          ⚠️ <strong>გვიანი გაუქმება</strong> (24 სთ-ზე ნაკლები)
+                          ⚠️ <strong>გვიანი გაუქმება</strong> — გაკვეთილამდე 24 სთ-ზე ნაკლებია
                           <br />
                           {price > 0 ? (
-                            <>სტუდენტს დაუბრუნდება <strong>{refund}₾</strong> (50%).
-                            თქვენ დაგეჯარიმებათ <strong>{penalty}₾</strong> (20%).</>
+                            <>სტუდენტს სრულად დაუბრუნდება <strong>{price}₾</strong>.
+                            {" "}თქვენი საფულიდან გამოაქვთ <strong>{penalty}₾</strong> ჯარიმა (20%).</>
                           ) : "სტუდენტი შეტყობინდება."}
                         </>
                       ) : (

@@ -69,12 +69,14 @@ export async function POST(request, { params }) {
       ? `გაუქმების მიზეზი: ${reason}`
       : isStudent ? "სტუდენტმა ჯავშანი გააუქმა." : "მასწავლებელმა ჯავშანი გააუქმა.";
     if (creditRefunded > 0) notifBody += ` ${creditRefunded}₾ საფულეში დაბრუნდა.`;
-    await admin.from("notifications").insert({
-      user_id: notifyId, type: "booking",
-      title:   "ჯავშანი გაუქმდა ❌",
-      body:    notifBody,
-      link:    notifyLink, is_read: false,
-    }).catch(() => {});
+    try {
+      await admin.from("notifications").insert({
+        user_id: notifyId, type: "booking",
+        title:   "ჯავშანი გაუქმდა ❌",
+        body:    notifBody,
+        link:    notifyLink, is_read: false,
+      });
+    } catch {}
 
     return NextResponse.json({ success: true, credit_refunded: creditRefunded || null });
   } catch (err) {

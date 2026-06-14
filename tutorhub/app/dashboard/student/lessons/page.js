@@ -665,13 +665,8 @@ function LessonsContent() {
                             {cancellingId === lesson.id ? "..." : "გაუქმება"}
                           </button>
                         ) : (
-                          <div className="relative group">
-                            <button disabled className="text-xs text-gray-300 px-3 py-1.5 cursor-not-allowed">
-                              გაუქმება
-                            </button>
-                            <div className="absolute bottom-full right-0 mb-1 w-52 bg-gray-800 text-white text-xs px-3 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                              გაუქმება შეიძლება მხოლოდ 24სთ+ ადრე
-                            </div>
+                          <div className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-xl px-3 py-1.5 leading-snug">
+                            ❌ გაუქმება შეუძლებელია — 24 სთ-ზე ნაკლებია, თანხა არ დაბრუნდება
                           </div>
                         )
                       )}
