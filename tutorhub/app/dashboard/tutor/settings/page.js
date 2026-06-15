@@ -57,6 +57,7 @@ export default function TutorSettingsPage() {
   const [deleteModal,   setDeleteModal]   = useState(false);
   const [deleteText,    setDeleteText]    = useState("");
   const [deleting,      setDeleting]      = useState(false);
+  const [deleteBlock,   setDeleteBlock]   = useState(null); // null | blocker object
 
   const [form, setForm] = useState({
     newPassword:           "",
@@ -162,10 +163,28 @@ export default function TutorSettingsPage() {
   async function handleDeleteAccount() {
     if (deleteText !== "DELETE") return;
     setDeleting(true);
-    const supabase = createClient();
-    await supabase.from("profiles").update({ deleted_at: new Date().toISOString() }).eq("id", userId);
-    await supabase.auth.signOut();
-    router.push("/");
+    setDeleteBlock(null);
+    try {
+      const res  = await fetch("/api/user/delete-account", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.blocked) {
+          setDeleteBlock(data);
+          setDeleteText("");
+        } else {
+          setDeleteBlock({ error: data.error || "წაშლა ვერ მოხერხდა" });
+        }
+        setDeleting(false);
+        return;
+      }
+      // Success — auth user deleted server-side, just redirect
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/");
+    } catch {
+      setDeleteBlock({ error: "კავშირის შეცდომა" });
+      setDeleting(false);
+    }
   }
 
   const strength = passwordStrength(form.newPassword);
@@ -428,23 +447,69 @@ export default function TutorSettingsPage() {
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
             <p className="text-lg font-black text-red-600 mb-1">⚠️ ანგარიშის წაშლა</p>
             <p className="text-sm text-gray-500 mb-4">
-              ეს მოქმედება <strong>შეუქცევადია</strong>. ყველა მონაცემი, გაკვეთილი და გადახდა წაიშლება.
+              ეს მოქმედება <strong>შეუქცევადია</strong>. ყველა პერსონალური მონაცემი წაიშლება.
             </p>
-            <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4">
-              <p className="text-xs text-red-600 font-medium">
-                დასადასტურებლად ჩაწერეთ: <span className="font-black font-mono">DELETE</span>
-              </p>
-            </div>
-            <input className="input mb-4 font-mono tracking-widest" value={deleteText}
-              onChange={e => setDeleteText(e.target.value)} placeholder="DELETE" />
+
+            {/* Blocker messages */}
+            {deleteBlock && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 space-y-2 text-sm text-red-700">
+                {deleteBlock.error && <p>❌ {deleteBlock.error}</p>}
+
+                {deleteBlock.pendingCount > 0 && (
+                  <p>⏳ გაქვს <strong>{deleteBlock.pendingCount}</strong> დაუდასტურებელი ჯავშანი — ჯერ გააუქმე ან უარი თქვი ჯავშნებიდან.</p>
+                )}
+
+                {deleteBlock.confirmedCount > 0 && deleteBlock.lateCount === 0 && (
+                  <p>📅 გაქვს <strong>{deleteBlock.confirmedCount}</strong> დადასტ. ჯავშანი — გააუქმე ჯავშნები (გაკვეთილამდე 24სთ+ — უფასო გაუქმება).</p>
+                )}
+
+                {deleteBlock.lateCount > 0 && (
+                  <>
+                    <p>⚠️ <strong>{deleteBlock.lateCount}</strong> ჯავშანი 24სთ-ში — გაუქმება ჯარიმის გარეშე შეუძლებელია.</p>
+                    <p>💸 ჯარიმა: <strong>{deleteBlock.totalPenalty}₾</strong> | ბალანსი: <strong>{deleteBlock.walletBalance}₾</strong></p>
+                    {deleteBlock.shortfall > 0 && (
+                      <p className="font-semibold">🔴 ჯერ შეავსე ბალანსი <strong>{deleteBlock.shortfall}₾</strong>-ით, გაფარე ჯარიმა, შემდეგ შეეძლება წაშლა.</p>
+                    )}
+                  </>
+                )}
+
+                {deleteBlock.negativeWallet && (
+                  <>
+                    <p>💸 ბალანსი უარყოფითია: <strong>{deleteBlock.walletBalance}₾</strong></p>
+                    <p className="font-semibold">🔴 შეავსე ბალანსი <strong>{deleteBlock.shortfall}₾</strong>-ით და შემდეგ შეეძლება წაშლა.</p>
+                  </>
+                )}
+
+                <a href="/dashboard/tutor/bookings"
+                  className="inline-block mt-1 text-xs text-red-600 underline font-semibold">
+                  → ჯავშნების გვერდზე გადასვლა
+                </a>
+              </div>
+            )}
+
+            {/* Confirmation input — only show when no blocker */}
+            {!deleteBlock && (
+              <>
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4">
+                  <p className="text-xs text-red-600 font-medium">
+                    დასადასტურებლად ჩაწერეთ: <span className="font-black font-mono">DELETE</span>
+                  </p>
+                </div>
+                <input className="input mb-4 font-mono tracking-widest" value={deleteText}
+                  onChange={e => setDeleteText(e.target.value)} placeholder="DELETE" />
+              </>
+            )}
+
             <div className="flex gap-2">
-              <button onClick={() => { setDeleteModal(false); setDeleteText(""); }}
-                className="flex-1 btn-secondary py-2.5">გაუქმება</button>
-              <button onClick={handleDeleteAccount}
-                disabled={deleteText !== "DELETE" || deleting}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-40">
-                {deleting ? "იშლება..." : "წაშლა"}
-              </button>
+              <button onClick={() => { setDeleteModal(false); setDeleteText(""); setDeleteBlock(null); }}
+                className="flex-1 btn-secondary py-2.5">დახურვა</button>
+              {!deleteBlock && (
+                <button onClick={handleDeleteAccount}
+                  disabled={deleteText !== "DELETE" || deleting}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-40">
+                  {deleting ? "იშლება..." : "წაშლა"}
+                </button>
+              )}
             </div>
           </div>
         </div>
