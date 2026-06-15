@@ -522,9 +522,9 @@ export default function TutorIncomePage() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {transactions.map(b => {
-                      const gross      = b.total_price || 0;
-                      const comm       = Math.round(gross * COMMISSION * 100) / 100;
-                      const net        = gross - comm;
+                      const gross = b.total_price || 0;
+                      const comm  = gross * COMMISSION;
+                      const net   = gross - comm;
                       const badge = statusBadge(b.status);
                       return (
                         <tr key={b.id} className={`hover:bg-gray-50/60 transition-colors ${gross === 0 ? "opacity-50" : ""}`}>
