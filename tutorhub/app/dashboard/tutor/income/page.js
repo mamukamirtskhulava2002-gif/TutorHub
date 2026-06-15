@@ -522,9 +522,9 @@ export default function TutorIncomePage() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {transactions.map(b => {
-                      const gross = b.total_price || 0;
-                      const comm  = gross * COMMISSION;
-                      const net   = gross - comm;
+                      const gross      = b.total_price || 0;
+                      const comm       = Math.round(gross * COMMISSION * 100) / 100;
+                      const net        = gross - comm;
                       const badge = statusBadge(b.status);
                       return (
                         <tr key={b.id} className={`hover:bg-gray-50/60 transition-colors ${gross === 0 ? "opacity-50" : ""}`}>
@@ -544,10 +544,10 @@ export default function TutorIncomePage() {
                             {gross > 0 ? `${gross} ₾` : "—"}
                           </td>
                           <td className="py-3 pr-3 text-right text-xs text-red-400">
-                            {gross > 0 ? `−${comm.toFixed(0)} ₾` : "—"}
+                            {gross > 0 ? `−${comm % 1 === 0 ? comm : comm.toFixed(2)} ₾` : "—"}
                           </td>
                           <td className="py-3 pr-3 text-right text-xs font-black text-emerald-600">
-                            {gross > 0 ? `${net.toFixed(0)} ₾` : "—"}
+                            {gross > 0 ? `${net % 1 === 0 ? net : net.toFixed(2)} ₾` : "—"}
                           </td>
                           <td className="py-3">
                             <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${badge.c}`}>
