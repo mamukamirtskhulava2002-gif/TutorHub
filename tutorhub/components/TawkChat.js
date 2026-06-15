@@ -71,22 +71,14 @@ export default function TawkChat() {
   /* ── auto-reply 10s after unauthenticated visitor sends first message ── */
   useEffect(() => {
     let timer = null;
-    let fired = false;
-
-    function onMessage() {
-      if (isAuth || fired) return;
-      fired = true;
+    const handler = () => {
+      if (isAuth) return;
+      if (timer) return; // already counting
       timer = setTimeout(() => setShowAutoReply(true), 10000);
-    }
-
-    window.Tawk_API = window.Tawk_API || {};
-    const prev = window.Tawk_API.onChatMessageVisitor;
-    window.Tawk_API.onChatMessageVisitor = function (msg) {
-      if (typeof prev === "function") prev(msg);
-      onMessage();
     };
-
+    window.addEventListener("tawk-visitor-message", handler);
     return () => {
+      window.removeEventListener("tawk-visitor-message", handler);
       if (timer) clearTimeout(timer);
     };
   }, [isAuth]);
@@ -248,6 +240,11 @@ export default function TawkChat() {
 
       <Script id="tawk-to" strategy="afterInteractive">{`
         var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+
+        /* Fire custom event when visitor sends a message — React listens to this */
+        Tawk_API.onChatMessageVisitor = function() {
+          window.dispatchEvent(new CustomEvent('tawk-visitor-message'));
+        };
 
         Tawk_API.onLoad = function () {
           /* hide on focused-flow pages */
