@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { REGIONS, getMunicipalitiesByRegion } from "@/lib/geo-data";
@@ -16,22 +16,61 @@ const LEVELS = [
 const GRADES = [1,2,3,4,5,6,7,8,9,10,11,12];
 
 const SUBJECTS = [
-  { id: "მათემატიკა",  icon: "📐" },
-  { id: "ფიზიკა",     icon: "⚛️" },
-  { id: "ქიმია",      icon: "🧪" },
-  { id: "ბიოლოგია",   icon: "🌿" },
-  { id: "ქართული",    icon: "📖" },
-  { id: "ინგლისური",  icon: "🇬🇧" },
-  { id: "ისტორია",    icon: "🏛️" },
-  { id: "პროგრამ.",   icon: "💻" },
-  { id: "გეოგრაფია",  icon: "🌍" },
-  { id: "ეკონომიკა",  icon: "📈" },
-  { id: "გერმანული",  icon: "🇩🇪" },
-  { id: "რუსული",     icon: "🇷🇺" },
-  { id: "ფრანგული",   icon: "🇫🇷" },
-  { id: "მუსიკა",     icon: "🎵" },
-  { id: "ხელოვნება",  icon: "🎨" },
-  { id: "სპორტი",     icon: "⚽" },
+  // სკოლა
+  { id:"მათემატიკა",               icon:"📐" },
+  { id:"ფიზიკა",                   icon:"⚛️" },
+  { id:"ქიმია",                    icon:"🧪" },
+  { id:"ბიოლოგია",                 icon:"🌿" },
+  { id:"გეოგრაფია",                icon:"🌍" },
+  { id:"ისტორია",                  icon:"🏛️" },
+  { id:"ქართული ენა და ლიტერატურა", icon:"📖" },
+  { id:"სამოქალაქო განათლება",      icon:"🏛" },
+  { id:"ინფორმატიკა",              icon:"🖥️" },
+  { id:"ეკონომიკა",                icon:"📈" },
+  // უცხო ენები
+  { id:"ინგლისური ენა",            icon:"🇬🇧" },
+  { id:"გერმანული ენა",            icon:"🇩🇪" },
+  { id:"ფრანგული ენა",             icon:"🇫🇷" },
+  { id:"ესპანური ენა",             icon:"🇪🇸" },
+  { id:"რუსული ენა",               icon:"🇷🇺" },
+  { id:"ჩინური ენა",               icon:"🇨🇳" },
+  { id:"იაპონური ენა",             icon:"🇯🇵" },
+  { id:"არაბული ენა",              icon:"🇸🇦" },
+  // პროგრამირება & ტექნოლოგია
+  { id:"Python",                   icon:"🐍" },
+  { id:"JavaScript",               icon:"🟨" },
+  { id:"Java",                     icon:"☕" },
+  { id:"C# / C++",                 icon:"⚙️" },
+  { id:"Swift",                    icon:"🍎" },
+  { id:"UI/UX დიზაინი",            icon:"🎨" },
+  { id:"გრაფიკული დიზაინი",        icon:"🖌️" },
+  { id:"3D მოდელირება",            icon:"🧊" },
+  { id:"კიბერუსაფრთხოება",         icon:"🔐" },
+  { id:"Cloud Computing",          icon:"☁️" },
+  { id:"მონაცემთა ბაზები (SQL)",   icon:"🗄️" },
+  // ბიზნესი & ფინანსები
+  { id:"ციფრული მარკეტინგი",       icon:"📣" },
+  { id:"SMM და SEO",               icon:"📱" },
+  { id:"ბუღალტერია",               icon:"🧾" },
+  { id:"ფინანსური მოდელირება",     icon:"💹" },
+  { id:"პროექტების მართვა (Agile/Scrum)", icon:"📋" },
+  // მუსიკა & ხელოვნება
+  { id:"ფორტეპიანო",               icon:"🎹" },
+  { id:"გიტარა",                   icon:"🎸" },
+  { id:"ვიოლინო",                  icon:"🎻" },
+  { id:"დრამი",                    icon:"🥁" },
+  { id:"სოლფეჯიო",                 icon:"🎼" },
+  { id:"მუსიკალური თეორია",        icon:"🎵" },
+  { id:"ხატვა",                    icon:"🖼️" },
+  { id:"ფოტოგრაფია",               icon:"📷" },
+  { id:"კინომონტაჟი",              icon:"🎬" },
+  // სხვა
+  { id:"იოგა და მედიტაცია",        icon:"🧘" },
+  { id:"კულინარია",                icon:"🍳" },
+  { id:"ჭადრაკი",                  icon:"♟️" },
+  { id:"საჯარო გამოსვლები",        icon:"🎤" },
+  { id:"სწრაფი კითხვა",            icon:"📚" },
+  { id:"მართვის მოწმობის თეორია",  icon:"🚗" },
 ];
 
 const FORMATS = [
@@ -58,6 +97,84 @@ const TIMES = [
 
 const TOTAL_STEPS = 3; // step 4 is conditional
 
+// ─── Searchable multi-select for subjects ─────────────────────
+function SubjectMultiSelect({ selected, onChange }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen]   = useState(false);
+  const ref      = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = SUBJECTS.filter(
+    s => !selected.includes(s.id) && s.id.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function add(s) {
+    onChange([...selected, s.id]);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function remove(id) {
+    onChange(selected.filter(x => x !== id));
+  }
+
+  return (
+    <div>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {selected.map(id => {
+            const subj = SUBJECTS.find(s => s.id === id);
+            return (
+              <span key={id} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-semibold rounded-full">
+                {subj?.icon} {id}
+                <button type="button" onClick={() => remove(id)}
+                  className="text-white/70 hover:text-white leading-none ml-0.5">✕</button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <div ref={ref} className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          placeholder="საგნის ძებნა და დამატება..."
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 placeholder-gray-400"
+        />
+        {open && filtered.length > 0 && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+            <div className="max-h-52 overflow-y-auto">
+              {filtered.map(s => (
+                <button key={s.id} type="button"
+                  onMouseDown={e => { e.preventDefault(); add(s); }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                  {s.icon} {s.id}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {open && filtered.length === 0 && query && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 px-4 py-3 text-sm text-gray-400">
+            არ მოიძებნა
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Pill toggle button ───────────────────────────────────────
 function Pill({ active, onClick, children, size = "md" }) {
   const sz = size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm";
@@ -77,14 +194,6 @@ function Pill({ active, onClick, children, size = "md" }) {
 // Step 1 — Level + Grade + Subjects
 // ─────────────────────────────────────────────────────────────
 function Step1({ data, onChange }) {
-  function toggleSubject(s) {
-    const current = data.preferred_subjects || [];
-    onChange({
-      ...data,
-      preferred_subjects: current.includes(s) ? current.filter(x => x !== s) : [...current, s],
-    });
-  }
-
   return (
     <div className="space-y-7">
       {/* Level selector */}
@@ -134,23 +243,11 @@ function Step1({ data, onChange }) {
         <p className="text-sm font-bold text-gray-700 mb-1">
           რომელ საგნებს ეძებ? <span className="text-red-400">*</span>
         </p>
-        <p className="text-xs text-gray-400 mb-3">მონიშნე ყველა, რაც გჭირდება</p>
-        <div className="flex flex-wrap gap-2">
-          {SUBJECTS.map(s => {
-            const active = (data.preferred_subjects || []).includes(s.id);
-            return (
-              <button key={s.id} type="button" onClick={() => toggleSubject(s.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-semibold text-sm transition-all ${
-                  active
-                    ? "bg-emerald-600 text-white border-emerald-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-emerald-400"
-                }`}>
-                <span className="text-base leading-none">{s.icon}</span>
-                {s.id}
-              </button>
-            );
-          })}
-        </div>
+        <p className="text-xs text-gray-400 mb-3">მოძებნე და დაამატე ყველა, რაც გჭირდება</p>
+        <SubjectMultiSelect
+          selected={data.preferred_subjects || []}
+          onChange={v => onChange({ ...data, preferred_subjects: v })}
+        />
       </div>
     </div>
   );
