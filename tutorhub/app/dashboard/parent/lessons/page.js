@@ -229,7 +229,10 @@ function LessonsContent() {
                   </div>
 
                   <p className="font-semibold text-gray-900">
-                    {lesson.tutors?.subject?.[0]} — {lesson.tutors?.profiles?.full_name}
+                    {lesson.tutors?.subject?.[0]} —{" "}
+                    <Link href={`/tutors/${lesson.tutors?.id}`} className="hover:underline hover:text-emerald-700">
+                      {lesson.tutors?.profiles?.full_name}
+                    </Link>
                   </p>
                   <p className="text-sm text-gray-400 mt-0.5">
                     {lesson.format === "online" ? "🌐 ონლაინ" : "🏫 პირისპირ"} · {lesson.duration_hours} სთ

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { REGIONS, getMunicipalitiesByRegion } from "@/lib/geo-data";
@@ -22,22 +22,25 @@ const GRADES = [
 ];
 
 const SUBJECTS = [
-  { id: "მათემატიკა",   icon: "📐" },
-  { id: "ფიზიკა",       icon: "⚛️" },
-  { id: "ქიმია",        icon: "🧪" },
-  { id: "ბიოლოგია",     icon: "🌿" },
-  { id: "ქართული",      icon: "📖" },
-  { id: "ინგლისური",    icon: "🇬🇧" },
-  { id: "ისტორია",      icon: "🏛️" },
-  { id: "პროგრამირება", icon: "💻" },
-  { id: "გეოგრაფია",    icon: "🌍" },
-  { id: "ეკონომიკა",    icon: "📈" },
-  { id: "გერმანული",    icon: "🇩🇪" },
-  { id: "რუსული",       icon: "🇷🇺" },
-  { id: "ფრანგული",     icon: "🇫🇷" },
-  { id: "მუსიკა",       icon: "🎵" },
-  { id: "ხელოვნება",    icon: "🎨" },
-  { id: "სპორტი",       icon: "⚽" },
+  // სკოლა
+  "მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","გეოგრაფია","ისტორია",
+  "ქართული ენა და ლიტერატურა","სამოქალაქო განათლება","ინფორმატიკა",
+  // უცხო ენები
+  "ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა",
+  "ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა",
+  // პროგრამირება & ტექნოლოგია
+  "Python","JavaScript","Java","C# / C++","Swift",
+  "UI/UX დიზაინი","გრაფიკული დიზაინი","3D მოდელირება",
+  "კიბერუსაფრთხოება","Cloud Computing","მონაცემთა ბაზები (SQL)",
+  // ბიზნესი & ფინანსები
+  "ციფრული მარკეტინგი","SMM და SEO","ბუღალტერია",
+  "ფინანსური მოდელირება","პროექტების მართვა (Agile/Scrum)",
+  // მუსიკა & ხელოვნება
+  "ფორტეპიანო","გიტარა","ვიოლინო","დრამი","სოლფეჯიო","მუსიკალური თეორია",
+  "ხატვა","ფოტოგრაფია","კინომონტაჟი",
+  // სხვა
+  "იოგა და მედიტაცია","კულინარია","ჭადრაკი","საჯარო გამოსვლები",
+  "სწრაფი კითხვა","მართვის მოწმობის თეორია",
 ];
 
 const FORMATS = [
@@ -62,16 +65,83 @@ const TIMES = [
   { id: "evening",   icon: "🌙",  label: "საღამო",  range: "17:00 – 21:00" },
 ];
 
-// ─── Step 1 — შვილის ინფო ────────────────────────────────────────────────────
-function Step1({ data, onChange }) {
-  function toggleSubject(s) {
-    const cur = data.subjects || [];
-    onChange({
-      ...data,
-      subjects: cur.includes(s) ? cur.filter(x => x !== s) : [...cur, s],
-    });
+// ─── Searchable multi-select for subjects ─────────────────────────────────────
+function SubjectMultiSelect({ selected, onChange }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen]   = useState(false);
+  const ref      = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = SUBJECTS.filter(
+    s => !selected.includes(s) && s.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function add(s) {
+    onChange([...selected, s]);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
   }
 
+  function remove(s) {
+    onChange(selected.filter(x => x !== s));
+  }
+
+  return (
+    <div>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {selected.map(s => (
+            <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-semibold rounded-full">
+              {s}
+              <button type="button" onClick={() => remove(s)}
+                className="text-white/70 hover:text-white leading-none ml-0.5">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div ref={ref} className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          placeholder="საგნის ძებნა და დამატება..."
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 placeholder-gray-400"
+        />
+        {open && filtered.length > 0 && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+            <div className="max-h-52 overflow-y-auto">
+              {filtered.map(s => (
+                <button key={s} type="button"
+                  onMouseDown={e => { e.preventDefault(); add(s); }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {open && filtered.length === 0 && query && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 px-4 py-3 text-sm text-gray-400">
+            არ მოიძებნა
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 1 — შვილის ინფო ────────────────────────────────────────────────────
+function Step1({ data, onChange }) {
   const groups = [...new Set(GRADES.map(g => g.group))];
 
   return (
@@ -120,23 +190,11 @@ function Step1({ data, onChange }) {
         <p className="text-sm font-bold text-gray-700 mb-1">
           რომელ საგნებში სჭირდება დახმარება? <span className="text-red-400">*</span>
         </p>
-        <p className="text-xs text-gray-400 mb-3">მონიშნე ყველა, რაც სჭირდება</p>
-        <div className="flex flex-wrap gap-2">
-          {SUBJECTS.map(s => {
-            const active = (data.subjects || []).includes(s.id);
-            return (
-              <button key={s.id} type="button" onClick={() => toggleSubject(s.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 font-semibold text-sm transition-all ${
-                  active
-                    ? "bg-emerald-600 text-white border-emerald-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-emerald-400"
-                }`}>
-                <span className="text-base leading-none">{s.icon}</span>
-                {s.id}
-              </button>
-            );
-          })}
-        </div>
+        <p className="text-xs text-gray-400 mb-3">მოძებნე და დაამატე ყველა, რაც სჭირდება</p>
+        <SubjectMultiSelect
+          selected={data.subjects || []}
+          onChange={v => onChange({ ...data, subjects: v })}
+        />
       </div>
 
     </div>

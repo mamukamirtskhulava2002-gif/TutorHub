@@ -70,7 +70,7 @@ export default function ParentDashboard() {
         // მასწავლებლის feedback
         const { data: feedback } = await supabase
           .from("lesson_feedback")
-          .select(`id, feedback_text, rating, created_at,
+          .select(`id, feedback_text, rating, created_at, tutor_id,
             profiles!tutor_id(full_name),
             profiles!student_id(full_name)`)
           .in("student_id", childIds)
@@ -275,7 +275,10 @@ export default function ParentDashboard() {
                         {lesson.tutors?.subject?.[0] && <span className="text-gray-500"> · {lesson.tutors.subject[0]}</span>}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        👨‍🏫 {lesson.tutors?.profiles?.full_name}
+                        👨‍🏫{" "}
+                        <Link href={`/tutors/${lesson.tutors?.id}`} className="hover:underline hover:text-emerald-600">
+                          {lesson.tutors?.profiles?.full_name}
+                        </Link>
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">{fmt(lesson.start_time)}</p>
                     </div>
@@ -310,7 +313,10 @@ export default function ParentDashboard() {
                   <div key={fb.id} className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-xs font-semibold text-blue-700">
-                        👨‍🏫 {fb["profiles!tutor_id"]?.full_name || fb.profiles?.full_name}
+                        👨‍🏫{" "}
+                        <Link href={`/tutors/${fb.tutor_id}`} className="hover:underline">
+                          {fb["profiles!tutor_id"]?.full_name || fb.profiles?.full_name}
+                        </Link>
                       </p>
                       <div className="flex gap-0.5">
                         {Array.from({ length: 5 }).map((_, i) => (

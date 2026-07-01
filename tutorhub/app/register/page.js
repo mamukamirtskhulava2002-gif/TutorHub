@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase";
 const ROLES = [
   { key: "student", icon: "🎓", name: "სტუდენტი",    desc: "ვეძებ მასწავლებელს" },
   { key: "tutor",   icon: "👨‍🏫", name: "მასწავლებელი", desc: "ვასწავლი" },
-  { key: "parent",  icon: "👨‍👩‍👧", name: "მშობელი",      desc: "შვილს ვეძებ მასწავლებელს" },
+  { key: "parent",  icon: "👨‍👩‍👧", name: "მშობელი",      desc: "შვილისთვის ვეძებ მასწავლებელს" },
 ];
 
 const ROLE_REDIRECT = {
@@ -32,6 +32,8 @@ function RegisterForm() {
   const [error, setError]       = useState("");
   const [showPass, setShowPass] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [ageCheck, setAgeCheck]   = useState(false);
+  const [termsCheck, setTermsCheck] = useState(false);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -286,8 +288,58 @@ function RegisterForm() {
               )}
             </div>
 
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full py-3 text-base disabled:opacity-60">
+            {/* Consent checkboxes */}
+            <div className="space-y-3 pt-1">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative flex-shrink-0 mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={ageCheck}
+                    onChange={e => setAgeCheck(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                    ageCheck ? "bg-emerald-500 border-emerald-500" : "border-gray-300 group-hover:border-emerald-400"
+                  }`}>
+                    {ageCheck && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                </div>
+                <span className="text-xs text-gray-600 leading-relaxed">
+                  ვადასტურებ, რომ <strong className="text-gray-800">18 წლის ან უფროსი</strong> ვარ, ან მაქვს მშობლის / კანონიერი წარმომადგენლის თანხმობა
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative flex-shrink-0 mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={termsCheck}
+                    onChange={e => setTermsCheck(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                    termsCheck ? "bg-emerald-500 border-emerald-500" : "border-gray-300 group-hover:border-emerald-400"
+                  }`}>
+                    {termsCheck && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                </div>
+                <span className="text-xs text-gray-600 leading-relaxed">
+                  გავეცანი და ვეთანხმები{" "}
+                  <Link href="/terms" target="_blank" className="text-emerald-600 hover:underline font-medium">წესებს და პირობებს</Link>
+                  {", "}
+                  <Link href="/privacy" target="_blank" className="text-emerald-600 hover:underline font-medium">კონფიდ. პოლიტიკას</Link>
+                  {", "}
+                  <Link href="/refund" target="_blank" className="text-emerald-600 hover:underline font-medium">Refund Policy-ს</Link>
+                  {", "}
+                  <Link href="/cancellation" target="_blank" className="text-emerald-600 hover:underline font-medium">გაუქმების პოლიტიკასა</Link>
+                  {" და "}
+                  <Link href="/cookies" target="_blank" className="text-emerald-600 hover:underline font-medium">Cookie პოლიტიკას</Link>
+                </span>
+              </label>
+            </div>
+
+            <button type="submit" disabled={loading || !ageCheck || !termsCheck}
+              className="btn-primary w-full py-3 text-base disabled:opacity-40 disabled:cursor-not-allowed">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -303,18 +355,30 @@ function RegisterForm() {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
-          <button onClick={handleGoogle}
-            className="btn-secondary w-full py-3 flex items-center justify-center gap-2">
-            <span className="w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">G</span>
-            Google-ით რეგისტრაცია
-          </button>
-
-          <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-            რეგისტრაციით ეთანხმები{" "}
-            <Link href="/terms" className="text-emerald-600 hover:underline">პირობებს</Link>
-            {" "}და{" "}
-            <Link href="/privacy" className="text-emerald-600 hover:underline">კონფიდენციალურობას</Link>
-          </p>
+          <div className={`relative${(!ageCheck || !termsCheck) ? " group/google" : ""}`}>
+            {(!ageCheck || !termsCheck) && (
+              <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-20 opacity-0 group-hover/google:opacity-100 transition-opacity duration-150">
+                <div className="bg-gray-900 text-white text-xs font-medium px-3 py-2 rounded-xl whitespace-nowrap shadow-lg">
+                  ჯერ მონიშნე ზემოთ ორივე თანხმობა ✓
+                </div>
+                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 mx-auto" />
+              </div>
+            )}
+            <button
+              onClick={() => {
+                if (!ageCheck || !termsCheck) {
+                  setError("გთხოვთ, ჯერ მონიშნოთ ორივე თანხმობა");
+                  return;
+                }
+                handleGoogle();
+              }}
+              className={`btn-secondary w-full py-3 flex items-center justify-center gap-2 ${
+                (!ageCheck || !termsCheck) ? "opacity-40 cursor-not-allowed" : ""
+              }`}>
+              <span className="w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">G</span>
+              Google-ით რეგისტრაცია
+            </button>
+          </div>
           <p className="text-center text-sm text-gray-400 mt-4">
             უკვე გაქვს ანგარიში?{" "}
             <Link href="/login" className="text-emerald-600 font-medium hover:underline">შედი</Link>

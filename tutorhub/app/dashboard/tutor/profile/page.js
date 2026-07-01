@@ -479,21 +479,27 @@ export default function TutorProfilePage() {
     setAvatarUploading(true);
     setAvatarMsg({ type: "", text: "" });
     const supabase = createClient();
-    const ext  = file.name.split(".").pop().toLowerCase();
-    const path = `${userId}/avatar.${ext}`;
+    const ext = file.name.split(".").pop().toLowerCase();
+    // Unique filename per upload so CDN never serves a stale cached version
+    const path = `${userId}/avatar_${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("avatars")
-      .upload(path, file, { upsert: true });
+      .upload(path, file);
     if (upErr) {
       setAvatarMsg({ type: "error", text: "ატვირთვა ვერ მოხდა: " + upErr.message });
       setAvatarUploading(false); return;
     }
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = publicUrl + "?t=" + Date.now();
-    await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
-    // Sync to tutors.photo_url so landing page shows the updated photo
-    await supabase.from("tutors").update({ photo_url: url }).eq("id", userId);
-    setAvatarUrl(url);
+    // Delete the old file to keep storage clean
+    if (avatarUrl) {
+      const oldPathMatch = avatarUrl.match(/avatars\/(.+?)(\?|$)/);
+      if (oldPathMatch?.[1]) {
+        supabase.storage.from("avatars").remove([decodeURIComponent(oldPathMatch[1])]);
+      }
+    }
+    await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId);
+    await supabase.from("tutors").update({ photo_url: publicUrl }).eq("id", userId);
+    setAvatarUrl(publicUrl);
     setAvatarMsg({ type: "success", text: "✅ ფოტო ატვირთულია!" });
     setTimeout(() => setAvatarMsg({ type: "", text: "" }), 3000);
     setAvatarUploading(false);

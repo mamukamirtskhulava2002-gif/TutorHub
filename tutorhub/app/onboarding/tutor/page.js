@@ -8,10 +8,25 @@ import TutorCertificationModal from "@/components/TutorCertificationModal";
 
 // ─── Constants ───────────────────────────────────────────────
 const SUBJECTS = [
-  "მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","ქართული","ინგლისური",
-  "ისტორია","პროგრამირება","გეოგრაფია","ეკონომიკა","გერმანული","რუსული",
-  "ფრანგული","სპანური","მუსიკა","ხელოვნება","ფიზ.აღზ.","ფსიქოლოგია",
-  "სამართალი","ბუღალტერია","ბიზნესი","სახვ.ხელოვ.",
+  // სკოლა
+  "მათემატიკა","ფიზიკა","ქიმია","ბიოლოგია","გეოგრაფია","ისტორია",
+  "ქართული ენა და ლიტერატურა","სამოქალაქო განათლება","ინფორმატიკა",
+  // უცხო ენები
+  "ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა",
+  "ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა",
+  // პროგრამირება & ტექნოლოგია
+  "Python","JavaScript","Java","C# / C++","Swift",
+  "UI/UX დიზაინი","გრაფიკული დიზაინი","3D მოდელირება",
+  "კიბერუსაფრთხოება","Cloud Computing","მონაცემთა ბაზები (SQL)",
+  // ბიზნესი & ფინანსები
+  "ციფრული მარკეტინგი","SMM და SEO","ბუღალტერია",
+  "ფინანსური მოდელირება","პროექტების მართვა (Agile/Scrum)",
+  // მუსიკა & ხელოვნება
+  "ფორტეპიანო","გიტარა","ვიოლინო","დრამი","სოლფეჯიო","მუსიკალური თეორია",
+  "ხატვა","ფოტოგრაფია","კინომონტაჟი",
+  // სხვა
+  "იოგა და მედიტაცია","კულინარია","ჭადრაკი","საჯარო გამოსვლები",
+  "სწრაფი კითხვა","მართვის მოწმობის თეორია",
 ];
 
 const LEVELS = [
@@ -168,6 +183,83 @@ function Step1({ data, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Searchable multi-select for subjects
+// ─────────────────────────────────────────────────────────────
+function SubjectMultiSelect({ selected, onChange }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen]   = useState(false);
+  const ref      = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = SUBJECTS.filter(
+    s => !selected.includes(s) && s.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function add(s) {
+    onChange([...selected, s]);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function remove(s) {
+    onChange(selected.filter(x => x !== s));
+  }
+
+  return (
+    <div>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {selected.map(s => (
+            <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-semibold rounded-full">
+              {s}
+              <button type="button" onClick={() => remove(s)}
+                className="text-white/70 hover:text-white leading-none ml-0.5">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div ref={ref} className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onFocus={() => setOpen(true)}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          placeholder="საგნის ძებნა და დამატება..."
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 placeholder-gray-400"
+        />
+        {open && filtered.length > 0 && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+            <div className="max-h-52 overflow-y-auto">
+              {filtered.map(s => (
+                <button key={s} type="button"
+                  onMouseDown={e => { e.preventDefault(); add(s); }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {open && filtered.length === 0 && query && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 px-4 py-3 text-sm text-gray-400">
+            არ მოიძებნა
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // Step 2 — Subject Specialization
 // ─────────────────────────────────────────────────────────────
 function Step2({ data, onChange }) {
@@ -179,14 +271,10 @@ function Step2({ data, onChange }) {
           საგნები <span className="text-red-400">*</span>
           <span className="ml-2 text-gray-400 font-normal text-xs">(min 1)</span>
         </label>
-        <div className="flex flex-wrap gap-2">
-          {SUBJECTS.map(s => (
-            <Pill key={s} active={(data.subject || []).includes(s)}
-              onClick={() => onChange({ ...data, subject: toggle(data.subject || [], s) })}>
-              {s}
-            </Pill>
-          ))}
-        </div>
+        <SubjectMultiSelect
+          selected={data.subject || []}
+          onChange={v => onChange({ ...data, subject: v })}
+        />
       </div>
 
       {/* Target levels */}
@@ -738,6 +826,7 @@ export default function TutorOnboarding() {
       const { error: profErr } = await supabase.from("profiles").update({
         onboarding_completed: true,
         full_name:            fullName,
+        ...(photoUrl ? { avatar_url: photoUrl } : {}),
       }).eq("id", userId);
       if (profErr) throw new Error("profiles: " + profErr.message);
 

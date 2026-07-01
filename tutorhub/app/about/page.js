@@ -141,7 +141,7 @@ export default function AboutPage() {
           </Link>
           <p className="text-xs text-gray-400">© 2026 TutorHub Georgia. ყველა უფლება დაცულია.</p>
           <div className="flex gap-4 text-xs text-gray-400">
-            <Link href="/terms" className="hover:text-gray-700 transition-colors">სარგებლობის წესები</Link>
+            <Link href="/terms" className="hover:text-gray-700 transition-colors">წესები და პირობები</Link>
             <Link href="/privacy" className="hover:text-gray-700 transition-colors">კონფიდ. პოლიტიკა</Link>
             <Link href="/contact" className="hover:text-gray-700 transition-colors">კონტაქტი</Link>
           </div>

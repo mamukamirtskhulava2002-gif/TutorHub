@@ -204,7 +204,7 @@ const [unreadCount, setUnreadCount]   = useState(0);
       if (profile.preferred_subjects?.length > 0) {
         let query = supabase
           .from("tutors")
-          .select("id, photo_url, price_per_hour, rating, review_count, subject, is_online, is_offline, city, profiles!id(full_name)")
+          .select("id, photo_url, price_per_hour, rating, review_count, subject, is_online, is_offline, city, profiles!id(full_name, avatar_url)")
           .eq("is_verified", true)
           .overlaps("subject", profile.preferred_subjects)
           .order("rating", { ascending: false })
@@ -360,7 +360,10 @@ const [unreadCount, setUnreadCount]   = useState(0);
     </h2>
 
     <p className="text-lg">
-      👨‍🏫 {upcomingLessons[0]?.tutors?.profiles?.full_name}
+      👨‍🏫{" "}
+      <Link href={`/tutors/${upcomingLessons[0]?.tutors?.id}`} className="hover:underline">
+        {upcomingLessons[0]?.tutors?.profiles?.full_name}
+      </Link>
     </p>
 
     <p className="mt-2 opacity-90">
@@ -406,7 +409,10 @@ const [unreadCount, setUnreadCount]   = useState(0);
                       <p className="text-sm font-semibold truncate">
                         {Array.isArray(l.tutors?.subject)
                           ? l.tutors.subject[0]
-                          : l.tutors?.subject} — {l.tutors?.profiles?.full_name}
+                          : l.tutors?.subject} —{" "}
+                        <Link href={`/tutors/${l.tutors?.id}`} className="hover:underline hover:text-emerald-700">
+                          {l.tutors?.profiles?.full_name}
+                        </Link>
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {l.date} {l.time_slot}
@@ -719,8 +725,8 @@ const [unreadCount, setUnreadCount]   = useState(0);
                 return (
                   <Link key={t.id} href={`/booking/${t.id}`}
                     className="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-                    {t.photo_url
-                      ? <img src={t.photo_url} alt={name}
+                    {(t.profiles?.avatar_url || t.photo_url)
+                      ? <img src={t.profiles?.avatar_url || t.photo_url} alt={name}
                           className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
                       : <div className="avatar w-12 h-12 text-sm avatar-green flex-shrink-0">{initials}</div>
                     }

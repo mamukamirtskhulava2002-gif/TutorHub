@@ -77,7 +77,7 @@ const SUBJECT_CATEGORIES = [
   {
     icon: "🌍", label: "უცხო ენები",
     headerBg: "bg-emerald-500", chipBg: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-    subjects: ["ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა","ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა","IELTS / TOEFL / SAT მომზადება"],
+    subjects: ["ინგლისური ენა","გერმანული ენა","ფრანგული ენა","ესპანური ენა","ჩინური ენა","იაპონური ენა","არაბული ენა","რუსული ენა"],
   },
   {
     icon: "💻", label: "პროგრამირება & ტექნოლოგია",
@@ -235,7 +235,7 @@ export default async function HomePage() {
               გარეშე
             </h1>
             <p className="text-white/90 text-lg sm:text-2xl font-semibold mb-3 md:mb-4">
-              თქვენი შვილის წარმატების გზა.
+              თქვენი წარმატების გზა.
             </p>
 
             {/* Subheadline */}
@@ -378,7 +378,7 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-3">უსაფრთხოების გარანტია</h2>
-            <p className="text-gray-400 text-sm max-w-sm mx-auto">სამი მიზეზი, რის გამოც ჩვენ გენდობით</p>
+            <p className="text-gray-400 text-sm max-w-sm mx-auto">სამი მიზეზი, რის გამოც ჩვენ გვენდობით</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -682,8 +682,11 @@ export default async function HomePage() {
               <div className="flex flex-col gap-2.5">
                 {[
                   { href: "/about", label: "ჩვენ შესახებ" },
-                  { href: "/terms", label: "სარგებლობის წესები" },
+                  { href: "/terms", label: "წესები და პირობები" },
                   { href: "/privacy", label: "კონფიდ. პოლიტიკა" },
+                  { href: "/refund", label: "გადახდა და თანხის დაბრუნება" },
+                  { href: "/cancellation", label: "გაუქმების პოლიტიკა" },
+                  { href: "/cookies", label: "Cookie პოლიტიკა" },
                   { href: "/contact", label: "კონტაქტი" },
                 ].map(l => (
                   <Link key={l.href} href={l.href}

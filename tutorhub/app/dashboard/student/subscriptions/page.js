@@ -94,9 +94,9 @@ function SubCard({ sub, onCancel }) {
             📚
           </div>
           <div>
-            <p className="font-bold text-gray-900 text-sm">
+            <Link href={`/tutors/${sub.tutor_id}`} className="font-bold text-gray-900 text-sm hover:underline hover:text-emerald-700">
               {sub.tutor_name || "მასწავლებელი"}
-            </p>
+            </Link>
             <p className="text-xs text-gray-400">{sub.subject || "საგანი"}</p>
           </div>
         </div>

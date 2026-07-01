@@ -64,7 +64,7 @@ export default function ParentPaymentsPage() {
           .from("payments")
           .select(`id, amount, status, created_at, booking_id,
             profiles!student_id(id, full_name),
-            bookings(id, tutors(subject, profiles(full_name)))`)
+            bookings(id, tutors(id, subject, profiles(full_name)))`)
           .in("student_id", childIds)
           .order("created_at", { ascending: false });
         if (tab !== "all") q = q.eq("status", tab);
@@ -273,7 +273,9 @@ export default function ParentPaymentsPage() {
                         </span>
                       </div>
                       <p className="font-semibold text-gray-900">
-                        {p.bookings?.tutors?.profiles?.full_name || "მასწავლებელი"}
+                        <Link href={`/tutors/${p.bookings?.tutors?.id}`} className="hover:underline hover:text-emerald-700">
+                          {p.bookings?.tutors?.profiles?.full_name || "მასწავლებელი"}
+                        </Link>
                         {p.bookings?.tutors?.subject?.[0] && (
                           <span className="text-gray-400 font-normal"> · {p.bookings.tutors.subject[0]}</span>
                         )}

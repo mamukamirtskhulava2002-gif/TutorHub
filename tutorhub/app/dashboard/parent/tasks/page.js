@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { createClient } from "@/lib/supabase";
 
@@ -203,7 +204,10 @@ export default function ParentTasksPage() {
                               <div className="min-w-0">
                                 <p className="font-semibold text-gray-800 leading-tight">{a.title}</p>
                                 <p className="text-xs text-gray-400 mt-0.5">
-                                  მასწავლებელი: {tutor?.full_name || "—"}
+                                  მასწავლებელი:{" "}
+                                  <Link href={`/tutors/${a.tutor_id}`} className="hover:underline hover:text-emerald-600">
+                                    {tutor?.full_name || "—"}
+                                  </Link>
                                 </p>
                               </div>
                               <StatusBadge status={status} />

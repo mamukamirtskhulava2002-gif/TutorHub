@@ -373,7 +373,7 @@ export default function TutorTasksPage() {
               <div className="text-7xl mb-5">📚</div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">მოსწავლე არ არის არჩეული</h3>
               <p className="text-gray-400 max-w-sm text-sm">
-                მარცხნიდან მოსწავლეს მონიშნეთ დავალებების სანახავად ან ახლის დასამატებლად
+                მარცხენა მხარეს დააჭირეთ მოსწავლის სახელს და გვარს, რათა დაამატოთ დავალება ან ნახოთ მოსწავლის მიერ შესრულებული დავალება
               </p>
             </div>
           ) : (

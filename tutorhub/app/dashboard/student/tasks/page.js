@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { createClient } from "@/lib/supabase";
 
@@ -262,7 +263,9 @@ export default function StudentTasksPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-800 leading-tight">{a.title}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{tutor?.full_name}</p>
+                            <Link href={`/tutors/${a.tutor_id}`} className="text-xs text-gray-400 mt-0.5 hover:underline hover:text-emerald-600">
+                              {tutor?.full_name}
+                            </Link>
                           </div>
                           <StatusBadge status={status} />
                         </div>

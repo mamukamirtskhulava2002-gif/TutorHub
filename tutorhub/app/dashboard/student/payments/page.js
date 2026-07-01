@@ -308,7 +308,9 @@ export default function StudentPaymentsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">{tutorName}</p>
+                            <Link href={`/tutors/${payment.bookings?.tutor_id}`} className="font-semibold text-gray-900 text-sm hover:underline hover:text-emerald-700">
+                              {tutorName}
+                            </Link>
                             <p className="text-xs text-gray-400">{subject}</p>
                           </div>
                           <p className={`font-black text-base shrink-0 ${

@@ -401,7 +401,10 @@ function LessonsContent() {
                 <div>
                   <p className="text-xs font-medium text-emerald-200 mb-0.5">შემდეგი გაკვეთილი</p>
                   <p className="font-bold text-white text-base">
-                    {subj} · {nextLesson.tutors?.profiles?.full_name}
+                    {subj} ·{" "}
+                    <Link href={`/tutors/${nextLesson.tutor_id}`} className="hover:underline">
+                      {nextLesson.tutors?.profiles?.full_name}
+                    </Link>
                   </p>
                   <p className="text-sm text-emerald-200 mt-0.5">
                     {rel || formatDateFull(nextLesson.date, nextLesson.time_slot)}
