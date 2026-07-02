@@ -985,7 +985,9 @@ else if (bookingType === "package") {
               }
             </div>
             <div className="flex-1">
-              <h2 className="font-bold text-gray-900">{tutor?.profiles?.full_name}</h2>
+              <Link href={`/tutor/${id}`} className="font-bold text-gray-900 hover:underline hover:text-emerald-700">
+                {tutor?.profiles?.full_name}
+              </Link>
               <p className="text-sm text-gray-400">{selectedSubject || (tutor?.subject || []).join(", ")} · ⭐ {tutor?.rating}</p>
               {scheduleMinPrice > 0 && (
                 <p className="text-sm font-black text-emerald-600 mt-0.5">

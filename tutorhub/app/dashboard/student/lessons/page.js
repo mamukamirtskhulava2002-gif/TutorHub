@@ -402,7 +402,7 @@ function LessonsContent() {
                   <p className="text-xs font-medium text-emerald-200 mb-0.5">შემდეგი გაკვეთილი</p>
                   <p className="font-bold text-white text-base">
                     {subj} ·{" "}
-                    <Link href={`/tutors/${nextLesson.tutor_id}`} className="hover:underline">
+                    <Link href={`/tutor/${nextLesson.tutor_id}`} className="hover:underline">
                       {nextLesson.tutors?.profiles?.full_name}
                     </Link>
                   </p>
@@ -502,7 +502,7 @@ function LessonsContent() {
                         {/* Name + price */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <Link href={`/tutors/${lesson.tutor_id}`}
+                            <Link href={`/tutor/${lesson.tutor_id}`}
                               className="font-bold text-gray-900 text-sm leading-tight hover:text-emerald-600 hover:underline transition-colors">
                               {tutorName}
                             </Link>

@@ -230,7 +230,7 @@ function LessonsContent() {
 
                   <p className="font-semibold text-gray-900">
                     {lesson.tutors?.subject?.[0]} —{" "}
-                    <Link href={`/tutors/${lesson.tutors?.id}`} className="hover:underline hover:text-emerald-700">
+                    <Link href={`/tutor/${lesson.tutors?.id}`} className="hover:underline hover:text-emerald-700">
                       {lesson.tutors?.profiles?.full_name}
                     </Link>
                   </p>

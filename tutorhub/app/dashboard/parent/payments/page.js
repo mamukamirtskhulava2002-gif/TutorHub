@@ -273,7 +273,7 @@ export default function ParentPaymentsPage() {
                         </span>
                       </div>
                       <p className="font-semibold text-gray-900">
-                        <Link href={`/tutors/${p.bookings?.tutors?.id}`} className="hover:underline hover:text-emerald-700">
+                        <Link href={`/tutor/${p.bookings?.tutors?.id}`} className="hover:underline hover:text-emerald-700">
                           {p.bookings?.tutors?.profiles?.full_name || "მასწავლებელი"}
                         </Link>
                         {p.bookings?.tutors?.subject?.[0] && (

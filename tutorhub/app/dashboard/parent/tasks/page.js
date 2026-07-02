@@ -205,7 +205,7 @@ export default function ParentTasksPage() {
                                 <p className="font-semibold text-gray-800 leading-tight">{a.title}</p>
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   მასწავლებელი:{" "}
-                                  <Link href={`/tutors/${a.tutor_id}`} className="hover:underline hover:text-emerald-600">
+                                  <Link href={`/tutor/${a.tutor_id}`} className="hover:underline hover:text-emerald-600">
                                     {tutor?.full_name || "—"}
                                   </Link>
                                 </p>

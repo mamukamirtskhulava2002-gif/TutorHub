@@ -276,7 +276,7 @@ export default function ParentDashboard() {
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         👨‍🏫{" "}
-                        <Link href={`/tutors/${lesson.tutors?.id}`} className="hover:underline hover:text-emerald-600">
+                        <Link href={`/tutor/${lesson.tutors?.id}`} className="hover:underline hover:text-emerald-600">
                           {lesson.tutors?.profiles?.full_name}
                         </Link>
                       </p>
@@ -314,7 +314,7 @@ export default function ParentDashboard() {
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-xs font-semibold text-blue-700">
                         👨‍🏫{" "}
-                        <Link href={`/tutors/${fb.tutor_id}`} className="hover:underline">
+                        <Link href={`/tutor/${fb.tutor_id}`} className="hover:underline">
                           {fb["profiles!tutor_id"]?.full_name || fb.profiles?.full_name}
                         </Link>
                       </p>

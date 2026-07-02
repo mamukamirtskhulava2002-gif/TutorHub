@@ -361,7 +361,7 @@ const [unreadCount, setUnreadCount]   = useState(0);
 
     <p className="text-lg">
       👨‍🏫{" "}
-      <Link href={`/tutors/${upcomingLessons[0]?.tutors?.id}`} className="hover:underline">
+      <Link href={`/tutor/${upcomingLessons[0]?.tutors?.id}`} className="hover:underline">
         {upcomingLessons[0]?.tutors?.profiles?.full_name}
       </Link>
     </p>
@@ -410,7 +410,7 @@ const [unreadCount, setUnreadCount]   = useState(0);
                         {Array.isArray(l.tutors?.subject)
                           ? l.tutors.subject[0]
                           : l.tutors?.subject} —{" "}
-                        <Link href={`/tutors/${l.tutors?.id}`} className="hover:underline hover:text-emerald-700">
+                        <Link href={`/tutor/${l.tutors?.id}`} className="hover:underline hover:text-emerald-700">
                           {l.tutors?.profiles?.full_name}
                         </Link>
                       </p>
